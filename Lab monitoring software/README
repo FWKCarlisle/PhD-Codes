@@ -1,5 +1,7 @@
 This file is a copy of some of matts code for sensors and lakeshore stuff from Tyler's one drive. 
 The two main codes are plot_T_onscreen and temp_on_screen which connect the lakeshore cryostat to
-the LT computer allowing the temps to be read directly off there. 
+the LT computer allowing the temps to be read directly off there. They were turned into .exe using PyInstaller.
+Can be done by using the command "Python -m PyInstaller --onefile Plot_temp.py" while in the downloads directory/wherever
+it's ended up.
 
 TBH not sure what the others are doing just yet.

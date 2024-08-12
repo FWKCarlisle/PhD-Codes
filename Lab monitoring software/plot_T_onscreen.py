@@ -2,12 +2,8 @@ import tkinter as tk
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import matplotlib.ticker as ticker
-import random
 import serial
-import time
-import tkinter as tk
-from tkinter import *
-import random
+
 
 # Initialize the data list
 data = []
@@ -21,17 +17,16 @@ ser.timeout = int(5)
 #ser
 #ser.open()
 
-# Function to update the graph with new data
+# Function to update the window with new data
 def update_graph():
-     #Generate a new random number and append it to the data list
-    #new_value = random.randint(0, 100)
+    #Update value for temp from Lakeshore
     ser.write('KRDG? A\r\n'.encode())
     read_pressure_data = ser.readline()
     test = read_pressure_data.decode()
     new_value=float(test[:-2])
     tempreading = "Cryostat T = "+test[:-2]+" K"
     
-    data.append(new_value)
+    data.append(new_value) #add new value to the graphing list
     
     # Limit the list to the last 25 items to keep the graph to 25 points
     if len(data) > 25:
@@ -49,7 +44,8 @@ def update_graph():
     
     ax.yaxis.set_major_formatter(ticker.FormatStrFormatter('%.3f'))
     
-    # Refresh the canvas to display the new plot
+    # Refresh the canvas to display the new plot and update the label
+    label.config(text=tempreading)
     canvas.draw()
     
     # Schedule the next update in 1 second
@@ -58,6 +54,10 @@ def update_graph():
 # Create the main window
 root = tk.Tk()
 root.title("Real-Time Graph Display")
+
+initial_number = 0
+label = tk.Label(root,text=initial_number,font=("Helvetica",79))
+label.pack(expand=True)
 
 # Create a Matplotlib figure
 fig = Figure(figsize=(5, 4), dpi=100)

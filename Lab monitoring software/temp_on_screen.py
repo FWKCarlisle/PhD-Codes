@@ -3,9 +3,8 @@ Created on Wed Aug  7 13:52:51 2024
 
 @author: ppztsj
 """
-
+# SCRIPT IS NOW DEFUNCT AND CONSOLODATED INTO PLOTTING CODE
 "Test script for opening communications with Lakeshore 331 Temperature controller"
-
 import serial
 import time
 import tkinter as tk

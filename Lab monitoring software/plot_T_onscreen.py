@@ -3,11 +3,12 @@ from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import matplotlib.ticker as ticker
 import serial
+import time
 
 
 # Initialize the data list
 data = []
-
+timestamps = []
 
 ser = serial.Serial("COM3", 9600, serial.SEVENBITS,
     serial.PARITY_ODD, serial.STOPBITS_ONE )
@@ -24,19 +25,24 @@ def update_graph():
     read_pressure_data = ser.readline()
     test = read_pressure_data.decode()
     new_value=float(test[:-2])
-    tempreading = "Cryostat T = "+test[:-2]+" K"
+    tempreading = "T_Cryo = "+test[:-2]+" K"
     
     data.append(new_value) #add new value to the graphing list
     
+    timestamps.append(time.time())
+        
+    print(timestamps[-1])
     # Limit the list to the last 25 items to keep the graph to 25 points
     if len(data) > 25:
         data.pop(0)
+        timestamps.pop(0)
     
     # Clear the previous plot
     ax.clear()
     
+ 
     # Plot the updated data
-    ax.plot(data, marker='o')
+    ax.plot(timestamps, data, marker='o')
     ax.set_title("Real-Time Line Graph")
     ax.set_xlabel("Time (s)")
     ax.set_ylabel("Value")

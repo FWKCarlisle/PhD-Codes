@@ -8,11 +8,14 @@ import time
 # Initialize the arrays
 data = []
 timestamps = []
+value = 0
 
 
 # Initialize the serial connection
 hemeter = serial.Serial('COM3', 9600, serial.EIGHTBITS, serial.PARITY_NONE, serial.STOPBITS_ONE, xonxoff=True)
 hemeter.timeout = int(5)
+
+hemeter.write("M2 \r\n".encode())
 
 # define functions for the serial connection
 def read_level():
@@ -35,8 +38,14 @@ def change_mode(mode): #mode = 0 for STBY, 1 for Slow, 2 for Fast, 3 for continu
 def update_graph():
     #Update value for temp from Lakeshore
     level = read_level()[2:6].decode()
+    print(level)
+    if level == "- ST":
+        value = 0
+    else:
+        value = int(level)
     
-    data.append(int(level)) #add new value to the graphing list
+    
+    data.append(value) #add new value to the graphing list
     
     timestamps.append(time.time())
         
@@ -99,9 +108,6 @@ button2.pack(side=tk.LEFT)
 
 button3 = tk.Button(root, text="Fast", command=lambda: change_mode_button(2))
 button3.pack(side=tk.LEFT)
-
-button4 = tk.Button(root, text="Cont", command=lambda: change_mode_button(3))
-button4.pack(side=tk.LEFT)
 
 # Run the Tkinter event loop
 root.mainloop()

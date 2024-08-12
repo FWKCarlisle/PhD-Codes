@@ -33,7 +33,7 @@ def update_graph():
         
     print(timestamps[-1])
     # Limit the list to the last 25 items to keep the graph to 25 points
-    if len(data) > 25:
+    if len(data) > 50:
         data.pop(0)
         timestamps.pop(0)
     

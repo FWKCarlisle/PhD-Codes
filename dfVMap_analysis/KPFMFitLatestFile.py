@@ -100,7 +100,7 @@ class Spectrum(output_data_spectra_dat):
     # =========================================================================
     
     def KPFMAnalysis(self, xAdatomCentre=None, yAdatomCentre=None, 
-                     plotCalculation=False, axFit=None, axResiduals=None):
+                     plotCalculation=False, axFit=None, axResiduals=None, e_min=None, e_max=None):
         """
         From KPFM spectra, we want to calculate the Vcontact value. This 
         involves fitting the spectrum data, df(V), to a parabola y=ax**2+bx+c
@@ -137,8 +137,9 @@ class Spectrum(output_data_spectra_dat):
         """
         
         kpfmAnalysis = KPFMSpectrumAnalysis(bias=self.x, df=self.y)
-        
-        self.vContact = kpfmAnalysis.CalcVContact()
+        self.E_min = e_min
+        self.E_max = e_max
+        self.vContact = kpfmAnalysis.CalcVContact(E_min=e_min, E_max=e_max)
         
         self.fit = kpfmAnalysis.fit
         self.residuals = kpfmAnalysis.fitInfo.residual
@@ -172,19 +173,22 @@ def FindLatestFile(path):
     return latestFile
 
 #%%
-path = r'D:\Results\2024\BP' 
-# fileName = 'Au(111)_00036.dat'
-# fileName = FindLatestFile(path)
+path = r"C:\Users\Fwkca\OneDrive\Desktop\PhD Data\Nikhil visit BP\Data for spatial"
+fileName = "BP_00164.dat"
 
-fileName = 'BP_00140.dat'
+
+# fileName = FindLatestFile(path)
 
 print('file: ', fileName)
 
 exampleSpectrum = Spectrum(path=path, fileName=fileName,
-                          channel='OC M1 Freq. Shift [AVG] (Hz)')
+                          channel='OC M1 Freq. Shift (Hz)')
 
 bias = exampleSpectrum.x
 df = exampleSpectrum.y
+
+Dip_start = 0.2
+Dip_end = 1
 
 # The file's matadata can be accessed eg. the spectra position
 # (See output_data_spectra_dat for more info)
@@ -192,8 +196,10 @@ x_pos = exampleSpectrum.x_pos
 y_pos = exampleSpectrum.y_pos
 
 # run the KPFM spectrum analysis
-exampleSpectrum.KPFMAnalysis(plotCalculation=True)
-
+# plt.figure(1)
+exampleSpectrum.KPFMAnalysis(e_min=Dip_start, e_max=Dip_end, plotCalculation=True)
+# plt.figure(2)
+# exampleSpectrum.KPFMAnalysis(plotCalculation=True)
 # the output of the analysis is stored as attributes:
 vContact = exampleSpectrum.vContact
 fit = exampleSpectrum.fit
@@ -205,3 +211,4 @@ residuals = exampleSpectrum.fitInfo.residual
 # lmfit ModelResult instance, See lmfitâ€™s ModelResult documentation)
 # import lmfit
 # print(lmfit.fit_report(exampleSpectrum.fitInfo))
+plt.show()

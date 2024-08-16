@@ -15,7 +15,7 @@ class KPFMSpectrumAnalysis():
         self.bias = bias
         self.df = df
     
-    def CalcVContact(self, aGuess=0.0, bGuess=0.0, cGuess=0.0, error=False):
+    def CalcVContact(self, aGuess=0.0, bGuess=0.0, cGuess=0.0, E_min = None, E_max = None, error=False):
         
         """
         Contact potential calculation. Involves performing a parabolic fit on 
@@ -47,7 +47,11 @@ class KPFMSpectrumAnalysis():
         fit and its residuals, so we can get a measure of the confidence to have
         in our result eg. using the PlotVContactCalculation method below.
         """
-        self.ParabolaFit()
+
+        self.E_min = E_min
+        self.E_max = E_max
+        print(E_min, E_max)
+        self.ParabolaFit(exclude_min=E_min, exclude_max=E_max)
         self.ParabolaMinima()            
         if error == True: return self.vContact, self.vContactErr
         else: return self.vContact
@@ -70,7 +74,7 @@ class KPFMSpectrumAnalysis():
     
     
     
-    def ParabolaFit(self, aGuess = 0.0, bGuess = 0.0, cGuess = 0.0):
+    def ParabolaFit(self, aGuess = 0.0, bGuess = 0.0, cGuess = 0.0, exclude_min=None, exclude_max=None):
         """
         Parameters
         ----------
@@ -92,7 +96,22 @@ class KPFMSpectrumAnalysis():
             ModelResult documentation for more info.
 
         """
+
+        
         x, y = self.bias, self.df
+
+        
+
+        # Filter data within the specified range
+        if exclude_min is not None and exclude_max is not None:
+            print('Excluding data points outside the range: ', exclude_min, exclude_max)
+            mask = (x < exclude_min) | (x > exclude_max)
+            x = x[mask]
+            y = y[mask]
+
+            self.bias = self.bias[mask]
+            self.df = self.df[mask]
+
         parabola_params = lmfit.Parameters() # define a python dict to store the fitting parameters
         parabola_params.add('a', value=aGuess) # define the fitting parameters and an initial guess for its value. Here you can also define contraints, and other useful things
         parabola_params.add('b', value=bGuess) 
@@ -151,7 +170,7 @@ class KPFMSpectrumAnalysis():
         # Calculate the error on the best-fit's minima
         xMinErr = 0.5 * np.sqrt(((bErr**2)*(a**2) + (b**2)*(aErr**2))/(a**4))
         yMinErr = 0.25*np.sqrt((b**4*aErr**2 + 4*b**2*a**2*bErr**2 + 16*cErr**2*a**4)/a**4)
-       
+        print(xMinErr)
         self.vContact = xMin
         self.dfAtVContact = yMin
         self.vContactErr = xMinErr
@@ -213,12 +232,12 @@ class KPFMSpectrumAnalysis():
 
         axFit.plot(self.bias, self.df, label = 'data')
         axFit.plot(self.bias, self.fit, label = 'fit', color='red')
-        axFit.plot(self.vContact, self.dfAtVContact, 'o', color='black', label = '$V_{Contact}$, ~' + str(round(self.vContact, ndigits=2)) + r'V $\pm $ ' + str(round(self.vContactErr, ndigits=2)))
+        axFit.plot(self.vContact, self.dfAtVContact, 'o', color='black', label = f'$V_{{Contact}}$, ~' + str(round(self.vContact, ndigits=2)) + r'V $\pm $ ' + str(round(self.vContactErr, ndigits=2)))
         axFit.errorbar(self.vContact, self.dfAtVContact, xerr=self.vContactErr, yerr=self.dfAtVContactErr, color='black')
         axFit.fill_between(self.bias, self.fit-self.fitConfBand,
-                 self.fit+self.fitConfBand, color='red', alpha=0.2, label='confidence band, 2$\sigma$')
+                 self.fit+self.fitConfBand, color='red', alpha=0.2, label=r'confidence band, 2$\sigma$')
         
-        axFit.set_ylabel('$\Delta$ f / Hz')
+        axFit.set_ylabel(r'$\Delta$ f / Hz')
         axFit.legend()
         axFit.grid()
 

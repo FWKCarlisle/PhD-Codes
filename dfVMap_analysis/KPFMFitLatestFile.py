@@ -29,6 +29,7 @@ from read_spectra import output_data_spectra_dat
 from KPFM_spectrum_analysis import KPFMSpectrumAnalysis
 import matplotlib.pyplot as plt
 import os
+import numpy as np
 
 
 class Spectrum(output_data_spectra_dat):
@@ -147,6 +148,7 @@ class Spectrum(output_data_spectra_dat):
         self.vContactErr = kpfmAnalysis.vContactErr
         self.dfAtVContactErr = kpfmAnalysis.dfAtVContactErr
         self.fitInfo = kpfmAnalysis.fitInfo
+        self.bias = kpfmAnalysis.bias
         
         if xAdatomCentre != None and yAdatomCentre != None:
             self.r = kpfmAnalysis.CalcR(self.x_pos, self.y_pos, xAdatomCentre, yAdatomCentre)
@@ -173,42 +175,118 @@ def FindLatestFile(path):
     return latestFile
 
 #%%
-path = r"C:\Users\Fwkca\OneDrive\Desktop\PhD Data\Nikhil visit BP\Data for spatial"
-fileName = "BP_00164.dat"
+path = r"C:\Users\Fwkca\OneDrive\Desktop\PhD Data\Nikhil visit BP\Spatial 4"
+
+# Get a list of all .dat files in the specified folder
+file_list = [f for f in os.listdir(path) if f.endswith('.dat')]
+
+# Iterate over each file in the list
+
+V_contacts = []
+V_contact_errs = []
+max_residuals = []
+max_biases = []
+fileNames = []
+
+biases = []
+dfs = []
 
 
-# fileName = FindLatestFile(path)
+for file_name in file_list:
+    
+    
 
-print('file: ', fileName)
+    Dip_start = 0.2
+    Dip_end = 1
 
-exampleSpectrum = Spectrum(path=path, fileName=fileName,
-                          channel='OC M1 Freq. Shift (Hz)')
+    # Create a Spectrum instance for each file
+    # example_spectrum = Spectrum(path=path, fileName=file_name, channel='OC M1 Freq. Shift [AVG] (Hz)')
+    example_spectrum = Spectrum(path=path, fileName=file_name, channel='OC M1 Freq. Shift (Hz)')
+    bias = example_spectrum.x
+    df = example_spectrum.y
+    # Run the KPFM spectrum analysis
+    example_spectrum.KPFMAnalysis(plotCalculation=True)
+    
+    # Access the analysis results
+    vContact = example_spectrum.vContact
+    fit = example_spectrum.fit
+    dfAtVContact = example_spectrum.dfAtVContact
+    vContactErr = example_spectrum.vContactErr
+    dfAtVContactErr = example_spectrum.dfAtVContactErr
+    residuals = example_spectrum.fitInfo.residual
+    bias = example_spectrum.bias
 
-bias = exampleSpectrum.x
-df = exampleSpectrum.y
+    dfs.append(df)
+    biases.append(bias)
 
-Dip_start = 0.2
-Dip_end = 1
+    # Find the maximum residual and its corresponding bias value past 0.1V
+    
 
-# The file's matadata can be accessed eg. the spectra position
-# (See output_data_spectra_dat for more info)
-x_pos = exampleSpectrum.x_pos
-y_pos = exampleSpectrum.y_pos
+    mask = bias > 0.1
+    # print(np.any(mask))
+    # print(len(bias),len(bias[mask]), len(residuals),len(residuals[mask]))
 
-# run the KPFM spectrum analysis
-# plt.figure(1)
-exampleSpectrum.KPFMAnalysis(e_min=Dip_start, e_max=Dip_end, plotCalculation=True)
-# plt.figure(2)
+    max_residual = max(residuals[mask])
+    max_bias = bias[mask]
+    max_bias = max_bias[residuals[mask] == max_residual].values[0]
+    # print("Max residual:", max_residual)
+    print("File - ",file_name, " Bias " , max_bias)
+    #
+
+    # if max_bias > 0:
+    #     print("max point of peak: ", round(max_residual,4), " bias value: ", round(max_bias,4) )
+    # else:
+    #     print("No dip")
+
+    # Store the analysis results for each file
+    V_contacts.append(vContact)
+    V_contact_errs.append(vContactErr)
+    max_residuals.append(max(residuals))
+    max_biases.append(max_bias)
+    
+
+    # Do something with the analysis results for each file
+    # ...
+
+print(max_biases)
+
+plt.clf()
+
+
+print(len(biases),len(dfs))
+
+for i in range(8,14):
+    plt.plot(biases[i],dfs[i],label = file_list[i])
+
+plt.legend()
+plt.show()
+# ALL OLD BITS
+
+# exampleSpectrum = Spectrum(path=path, fileName=fileName,
+#                           channel='OC M1 Freq. Shift [AVG] (Hz)')
+#                         #   channel='OC M1 Freq. Shift (Hz)')
+
+
+
+# # The file's matadata can be accessed eg. the spectra position
+# # (See output_data_spectra_dat for more info)
+# x_pos = exampleSpectrum.x_pos
+# y_pos = exampleSpectrum.y_pos
+
+# # run the KPFM spectrum analysis
+# # plt.figure(1)
+# # exampleSpectrum.KPFMAnalysis(e_min=Dip_start, e_max=Dip_end, plotCalculation=True)
+# # plt.figure(2)
 # exampleSpectrum.KPFMAnalysis(plotCalculation=True)
-# the output of the analysis is stored as attributes:
-vContact = exampleSpectrum.vContact
-fit = exampleSpectrum.fit
-dfAtVContact = exampleSpectrum.dfAtVContact
-vContactErr = exampleSpectrum.vContactErr
-dfAtVContactErr = exampleSpectrum.dfAtVContactErr
-residuals = exampleSpectrum.fitInfo.residual
+# # the output of the analysis is stored as attributes:
+# vContact = exampleSpectrum.vContact
+# fit = exampleSpectrum.fit
+# dfAtVContact = exampleSpectrum.dfAtVContact
+# vContactErr = exampleSpectrum.vContactErr
+# dfAtVContactErr = exampleSpectrum.dfAtVContactErr
+# residuals = exampleSpectrum.fitInfo.residual
 # ... more info is stored within exampleSpectrum.fitInfo object (which is a 
 # lmfit ModelResult instance, See lmfitâ€™s ModelResult documentation)
 # import lmfit
 # print(lmfit.fit_report(exampleSpectrum.fitInfo))
-plt.show()
+# plt.show()

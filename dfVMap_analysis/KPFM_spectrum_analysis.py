@@ -50,7 +50,6 @@ class KPFMSpectrumAnalysis():
 
         self.E_min = E_min
         self.E_max = E_max
-        print(E_min, E_max)
         self.ParabolaFit(exclude_min=E_min, exclude_max=E_max)
         self.ParabolaMinima()            
         if error == True: return self.vContact, self.vContactErr
@@ -170,7 +169,6 @@ class KPFMSpectrumAnalysis():
         # Calculate the error on the best-fit's minima
         xMinErr = 0.5 * np.sqrt(((bErr**2)*(a**2) + (b**2)*(aErr**2))/(a**4))
         yMinErr = 0.25*np.sqrt((b**4*aErr**2 + 4*b**2*a**2*bErr**2 + 16*cErr**2*a**4)/a**4)
-        print(xMinErr)
         self.vContact = xMin
         self.dfAtVContact = yMin
         self.vContactErr = xMinErr

@@ -36,19 +36,21 @@ import numpy as np
 # max_bias_5 =          np.array([0.28  ,0.47  ,0,0,0,0.435,0,0,0.62,0,0.37])
 
 
-number =                       [495,496,497,498,499,500,501,503,504,505,506,507]
-file_name =                    [314,315,316,317,318,319,320,322,323,324,325,326]
-distances_5 =         np.array([-0.34,-0.72,-1.07,-1.40,-1.77,-2.08,-2.441,0.33,0.71,1.03,1.38,1.73,2.08])
-d_errors_5 =          np.array([0.06,0.06,0.06,0.06,0.06,0.06,0.06,0.06,0.06,0.06,0.06,0.06])
-Contact_potential_5 = np.array([])
-CP_errors_5 =         np.array([])
-max_residual_5 =      np.array([])
-max_bias_5 =          np.array([0.3120001, 0.36800009, 0.4320001, 0.51200002, 0.67200011, 0.76000005, 0, 0.31999999, 0.37599999, 0.45600003, 0.59200007, 0.6880001,0])
+# number =                       [495,496,497,498,499,500,501,503,504,505,506,507]
+# file_name =                    [314,315,316,317,318,319,320,322,323,324,325,326]
+# distances_5 =         np.array([-0.34,-0.72,-1.07,-1.40,-1.77,-2.08,-2.441,0.33,0.71,1.03,1.38,1.73,2.08]) ### This is the data for slide 39 in scratch pad
+# d_errors_5 =          np.array([0.06,0.06,0.06,0.06,0.06,0.06,0.06,0.06,0.06,0.06,0.06,0.06])
+# max_bias_5 =          np.array([0.3120001, 0.36800009, 0.4320001, 0.51200002, 0.67200011, 0.76000005, 0, 0.31999999, 0.37599999, 0.45600003, 0.59200007, 0.6880001,0])
 
-# cut_off_potenital_5 = np.array([])
-# Cutoff_CP_errors_5 =  np.array([])
-
-
+number =                       [471,473,475,477,478, 479,481,483,485] #Number on image
+file_name =                    [289,290,292,294,296, 298,300,302,304] #File name
+distances_5 =         np.array([0, 1.20,2.29,3.40,4.08,-1.15,-2.24,-3.42,-4.57]) #Distance measured in nm
+d_errors_5 =          np.array([0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01]) #Error in distance
+max_bias_5 =          np.array([0.31499994, 0.48000002, 0.78999996, 0, 0.39499998,0, 0, 0]) #Well position
+#Well depth
+well_depths_5 =       np.array([0.13853357325280397, 0.14387903522809178, 0.12032916771994409, 0.10920208083530394, 0.07038546859238941, 0.1296870079292956, 0.04337245457452322, 0.05068743582084121, 0.055250692408798735])
+#'Rough depth error
+depth_errors_5 =      np.array([0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05])
 
 
 
@@ -80,12 +82,14 @@ def calculate_best_fit_line(x, y):
 # plt.errorbar(distances_4, Contact_potential_4, xerr=0, yerr=CP_errors_4, color='blue', fmt='o', label='Contact potential')
 # plt.errorbar(distances_4, cut_off_potenital_4, xerr=0, yerr=Cutoff_CP_errors_4, color='red', fmt='o', label='Cut off potential')
 # plt.errorbar(distances_5, Contact_potential_5, xerr=d_errors_5, yerr=CP_errors_5, color='blue', fmt='o', label='Contact potential')
-print(len(distances_5),len(max_residual_5),len(max_bias_5))
+# print(len(distances_5),len(max_residual_5),len(max_bias_5))
 # plt.scatter(distances_5, max_residual_5, color='red', label='Max residual')
-plt.scatter(distances_5, max_bias_5, color='green', label='Max bias')
+print(len(distances_5),len(well_depths_5))
+# plt.scatter(distances_5, max_bias_5, color='green', label='Max bias')
+plt.errorbar(distances_5, well_depths_5, xerr=d_errors_5, yerr=depth_errors_5, color='green', fmt='o', label='Well depth')
 
 plt.xlabel('Distance (nm)')
-plt.ylabel('Max Bias (V)')
-plt.xlim(-3,3)
+plt.ylabel('Well depth (Hz)')
+plt.xlim(-5,5)
 plt.title('Contact potential against distance')
 plt.show()

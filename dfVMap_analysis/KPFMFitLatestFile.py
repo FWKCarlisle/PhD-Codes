@@ -175,7 +175,7 @@ def FindLatestFile(path):
     return latestFile
 
 #%%
-path = r"C:\Users\Fwkca\OneDrive\Desktop\PhD Data\Nikhil visit BP\Spatial 4"
+path = r"C:\Users\Fwkca\OneDrive\Desktop\PhD Data\Nikhil visit BP\Spatial 5"
 
 # Get a list of all .dat files in the specified folder
 file_list = [f for f in os.listdir(path) if f.endswith('.dat')]
@@ -187,6 +187,7 @@ V_contact_errs = []
 max_residuals = []
 max_biases = []
 fileNames = []
+well_depths = []
 
 biases = []
 dfs = []
@@ -194,14 +195,12 @@ dfs = []
 
 for file_name in file_list:
     
-    
-
     Dip_start = 0.2
     Dip_end = 1
 
     # Create a Spectrum instance for each file
-    # example_spectrum = Spectrum(path=path, fileName=file_name, channel='OC M1 Freq. Shift [AVG] (Hz)')
-    example_spectrum = Spectrum(path=path, fileName=file_name, channel='OC M1 Freq. Shift (Hz)')
+    example_spectrum = Spectrum(path=path, fileName=file_name, channel='OC M1 Freq. Shift [AVG] (Hz)')
+    # example_spectrum = Spectrum(path=path, fileName=file_name, channel='OC M1 Freq. Shift (Hz)')
     bias = example_spectrum.x
     df = example_spectrum.y
     # Run the KPFM spectrum analysis
@@ -229,35 +228,40 @@ for file_name in file_list:
     max_residual = max(residuals[mask])
     max_bias = bias[mask]
     max_bias = max_bias[residuals[mask] == max_residual].values[0]
+    
+    residual_mean = np.mean(residuals)
+
+    well_depth = max_residual - residual_mean 
     # print("Max residual:", max_residual)
-    print("File - ",file_name, " Bias " , max_bias)
+    print("File - ",file_name, " Bias " , max_bias, " Residual ", max_residual, " Well depth ", well_depth, " residual mean ", residual_mean)
     #
-
-    # if max_bias > 0:
-    #     print("max point of peak: ", round(max_residual,4), " bias value: ", round(max_bias,4) )
-    # else:
-    #     print("No dip")
-
     # Store the analysis results for each file
+
+
+    
+
     V_contacts.append(vContact)
     V_contact_errs.append(vContactErr)
     max_residuals.append(max(residuals))
     max_biases.append(max_bias)
+    well_depths.append(well_depth)
     
-
+    # plt.show()
     # Do something with the analysis results for each file
     # ...
 
-print(max_biases)
+print("Well positions", max_biases)
+print("Well Depths",well_depths)
 
 plt.clf()
 
 
 print(len(biases),len(dfs))
 
-for i in range(8,14):
-    plt.plot(biases[i],dfs[i],label = file_list[i])
-
+for i in range(1,4):
+    plt.plot(biases[i],dfs[i], label = file_list[i]) #To offset, add + i/2
+plt.xlabel('Bias (V)')
+plt.ylabel('Frequency Shift (Hz)')
 plt.legend()
 plt.show()
 # ALL OLD BITS

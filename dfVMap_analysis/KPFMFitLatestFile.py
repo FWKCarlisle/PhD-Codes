@@ -175,7 +175,7 @@ def FindLatestFile(path):
     return latestFile
 
 #%%
-path = r"C:\Users\Fwkca\OneDrive\Desktop\PhD Data\Nikhil visit BP\Spatial 5"
+path = r"C:\Users\Fwkca\OneDrive\Desktop\PhD Data\Nikhil visit BP\Spatial 6"
 
 # Get a list of all .dat files in the specified folder
 file_list = [f for f in os.listdir(path) if f.endswith('.dat')]
@@ -199,8 +199,8 @@ for file_name in file_list:
     Dip_end = 1
 
     # Create a Spectrum instance for each file
-    example_spectrum = Spectrum(path=path, fileName=file_name, channel='OC M1 Freq. Shift [AVG] (Hz)')
-    # example_spectrum = Spectrum(path=path, fileName=file_name, channel='OC M1 Freq. Shift (Hz)')
+    # example_spectrum = Spectrum(path=path, fileName=file_name, channel='OC M1 Freq. Shift [AVG] (Hz)')
+    example_spectrum = Spectrum(path=path, fileName=file_name, channel='OC M1 Freq. Shift (Hz)')
     bias = example_spectrum.x
     df = example_spectrum.y
     # Run the KPFM spectrum analysis
@@ -246,7 +246,7 @@ for file_name in file_list:
     max_biases.append(max_bias)
     well_depths.append(well_depth)
     
-    # plt.show()
+    plt.show()
     # Do something with the analysis results for each file
     # ...
 

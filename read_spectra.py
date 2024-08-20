@@ -55,7 +55,7 @@ class output_data_spectra_dat():
         #Extract position infomation: 
         self.x_pos = float(meta_data.split('X (m)\t')[1].split('\n')[0][0:-1])
         self.y_pos = float(meta_data.split('Y (m)\t')[1].split('\n')[0][0:-1])
-        
+        self.z_pos = float(meta_data.split('Z (m)\t')[1].split('\n')[0][0:-1])
         
         #Load as df to make life easy
         self.df = pd.read_csv(io.StringIO(file_data),delimiter = '\t')

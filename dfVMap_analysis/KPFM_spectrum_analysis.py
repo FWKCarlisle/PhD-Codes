@@ -8,12 +8,15 @@ Created on Thu Apr 11 13:43:10 2024
 import lmfit
 import numpy as np
 import matplotlib.pyplot as plt
+from scipy.optimize import curve_fit
 
 class KPFMSpectrumAnalysis():
     
-    def __init__(self, bias, df):
+    def __init__(self, bias, df, fit_range=25):
         self.bias = bias
         self.df = df
+        self.fit_range = fit_range
+
     
     def CalcVContact(self, aGuess=0.0, bGuess=0.0, cGuess=0.0, E_min = None, E_max = None, error=False):
         
@@ -221,12 +224,18 @@ class KPFMSpectrumAnalysis():
         # if the contact potential has not yet been calculated, calculate it.
         if not hasattr(self, 'vContact'): self.CalcVContact()
         
+        def lorentzian(x, x0, a, gamma):
+            return a * gamma**2 / ((x - x0)**2 + gamma**2)
+
+
         if axFit == None and axResiduals == None:
-            fig, [axFit, axResiduals] = plt.subplots(nrows=2, ncols=1, sharex=True)
+            fig, [axFit, axResiduals, axDataMinusFit] = plt.subplots(nrows=3, ncols=1, sharex=True)
         elif axFit == None and axResiduals != None:
-            fig, axFit = plt.subplots()
+            fig, [axFit, axDataMinusFit] = plt.subplots(nrows=2, ncols=1, sharex=True)
         elif axFit != None and axResiduals == None:
-            fig, axResiduals = plt.subplots()
+            fig, [axResiduals, axDataMinusFit] = plt.subplots(nrows=2, ncols=1, sharex=True)
+        else:
+            fig, axDataMinusFit = plt.subplots()
 
         axFit.plot(self.bias, self.df, label = 'data')
         axFit.plot(self.bias, self.fit, label = 'fit', color='red')
@@ -243,7 +252,59 @@ class KPFMSpectrumAnalysis():
         axResiduals.set_ylabel('residuals / Hz')
         axResiduals.set_xlabel('bias / V')
         axResiduals.grid()
+
+
+        data_minus_fit = -(self.df - self.fit)
+        
+
+        #fit lorentzian
+        peak_index = np.argmax(data_minus_fit)
+        peak_bias = self.bias[peak_index]
+        
+        
+
+        mask = (self.bias >= peak_bias - 0.3) & (self.bias <= peak_bias + 0.3)
+        x_data = self.bias[mask]
+        y_data = data_minus_fit[mask]
+
+
+        # fit_range = self.fit_range  # Number of points to include around the peak
+        # start = max(0, peak_index - fit_range)
+        # end = min(len(data_minus_fit), peak_index + fit_range)
+
+        # x_data = self.bias[start:end]
+        # y_data = data_minus_fit[start:end]
+
+        # initial_guess = [self.bias[peak_index], max(data_minus_fit)-0.1, 1]
+        
+        initial_guess = [peak_bias, max(y_data), 1]
+        try:
+            popt, pcov = curve_fit(lorentzian, x_data, y_data, p0=initial_guess, maxfev=4000)
+        except RuntimeError as e:
+            print(f"Error in curve fitting: {e}")
+            return axFit, axResiduals, axDataMinusFit
+        
+        x0, a, gamma = popt
+        fwhm = 2 * gamma
+
+        # Plot the fitted Lorentzian
+        x_fit = np.linspace(min(x_data), max(x_data), 1000)
+        y_fit = lorentzian(x_fit, *popt)
+
+        if self.bias[peak_index] < 0:
+            print("No peak found in the data")
+            return axFit, axResiduals, axDataMinusFit
+
+        axDataMinusFit.plot(self.bias, data_minus_fit, label='data - fit', color='blue')
+        axDataMinusFit.plot(x_fit, y_fit, label=f'Lorentzian fit\nHeight: {a:.2f}\nFWHM: {fwhm:.2f}', color='red')
+
+
+
+        axDataMinusFit.set_ylabel('data - fit / Hz')
+        axDataMinusFit.set_xlabel('bias / V')
+        axDataMinusFit.legend()
+        axDataMinusFit.grid()
         
         plt.subplots_adjust(wspace=0, hspace=0)
         
-        return axFit, axResiduals
+        return axFit, axResiduals, axDataMinusFit

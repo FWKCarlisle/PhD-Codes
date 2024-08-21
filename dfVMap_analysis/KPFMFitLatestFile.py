@@ -100,8 +100,8 @@ class Spectrum(output_data_spectra_dat):
     # KPFM analysis
     # =========================================================================
     
-    def KPFMAnalysis(self, xAdatomCentre=None, yAdatomCentre=None, 
-                     plotCalculation=False, axFit=None, axResiduals=None, e_min=None, e_max=None):
+    def KPFMAnalysis(self, fit_range=25, xAdatomCentre=None, yAdatomCentre=None, 
+                     plotCalculation=False, axFit=None, axResiduals=None, e_min=None, e_max=None, ):
         """
         From KPFM spectra, we want to calculate the Vcontact value. This 
         involves fitting the spectrum data, df(V), to a parabola y=ax**2+bx+c
@@ -137,7 +137,7 @@ class Spectrum(output_data_spectra_dat):
 
         """
         
-        kpfmAnalysis = KPFMSpectrumAnalysis(bias=self.x, df=self.y)
+        kpfmAnalysis = KPFMSpectrumAnalysis(bias=self.x, df=self.y, fit_range=fit_range)
         self.E_min = e_min
         self.E_max = e_max
         self.vContact = kpfmAnalysis.CalcVContact(E_min=e_min, E_max=e_max)
@@ -154,8 +154,8 @@ class Spectrum(output_data_spectra_dat):
             self.r = kpfmAnalysis.CalcR(self.x_pos, self.y_pos, xAdatomCentre, yAdatomCentre)
             
         if plotCalculation == True: 
-            axFit, axResiduals = kpfmAnalysis.PlotVContactCalculation(axFit, axResiduals)
-            return axFit, axResiduals
+            axFit, axResiduals, axDataMinusFit = kpfmAnalysis.PlotVContactCalculation(axFit, axResiduals)
+            return axFit, axResiduals, axDataMinusFit
 
 
 #%%
@@ -198,13 +198,15 @@ for file_name in file_list:
     Dip_start = 0.2
     Dip_end = 1
 
+    fit_range = 30
+
     # Create a Spectrum instance for each file
     # example_spectrum = Spectrum(path=path, fileName=file_name, channel='OC M1 Freq. Shift [AVG] (Hz)')
     example_spectrum = Spectrum(path=path, fileName=file_name, channel='OC M1 Freq. Shift (Hz)')
     bias = example_spectrum.x
     df = example_spectrum.y
     # Run the KPFM spectrum analysis
-    example_spectrum.KPFMAnalysis(plotCalculation=True)
+    example_spectrum.KPFMAnalysis(fit_range=fit_range, plotCalculation=True)
     
     # Access the analysis results
     vContact = example_spectrum.vContact

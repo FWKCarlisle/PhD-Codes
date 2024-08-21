@@ -382,14 +382,14 @@ class Experiment_dfVmap(python_nano.python_Nanonis_TCP): # define child class fo
 
         xGrid, yGrid = sg.CircleGrid()
         
-        if upsampling is None: masks = None
+        if upsampling is None: masks = None # Just make sure upsampling is set to None?
         else: xGrid, yGrid, masks = sg.UpsamplingSteps(xGrid, yGrid,
                                                      upsampling, radSteps)
         
         xGrid, yGrid = sg.Rotate(xGrid, yGrid, xPivot=xCentre, yPivot=yCentre,
                                  rot=self.theta)
 
-        xGrid, yGrid, masks = sg.RemoveSamplingAboveAtoms(xGrid, yGrid, xAtoms, yAtoms,
+        xGrid, yGrid, masks = sg.RemoveSamplingAboveAtoms(xGrid, yGrid, xAtoms, yAtoms, # Comment out this? 
                                                    self.gridAtomDiameterToAvoid,
                                                    masks=masks)
         
@@ -686,14 +686,16 @@ yAtomsVec = np.array([0, -1, -1, -5, -5, -9, -9, -10], dtype=float) # change thi
 # xAtomsVec = np.array([0, 3, 5, 7, 9, 0, 2, 4, 6, 9], dtype=float)
 # yAtomsVec = np.array([0, -1, 1, 3, 5, 4, 6, 8, 10, 9], dtype=float)
 
-a = 0.648e-9
+a = 0.648e-9 #Lattice constants A & B
 b = 0.458e-9
-theta = 2.2
-gridDiameter = 55e-9
-gridPointsPerDiameter = 10
-gridAtomDiameterToAvoid = 3e-9
-upsampling = [4,5]
-radSteps = [10e-9,2e-9]
+theta = 2.2 #Scan rotation
+gridDiameter = 55e-9 # For BP 10n
+gridPointsPerDiameter = 10 # For BP - 64
+gridAtomDiameterToAvoid = 3e-9 # BP - 0
+# upsampling = [4,5]
+upsampling = None
+# radSteps = [10e-9,2e-9]
+radSteps = None
 # upsampling = None
 # radSteps = None
 

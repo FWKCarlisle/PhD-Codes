@@ -255,29 +255,21 @@ class KPFMSpectrumAnalysis():
 
 
         data_minus_fit = -(self.df - self.fit)
-        
-
-        #fit lorentzian
         peak_index = np.argmax(data_minus_fit)
         peak_bias = self.bias[peak_index]
+
+
+        #fit lorentzian
         
         
+        fit_range = self.fit_range  # Number of points to include around the peak
+        start = max(0, peak_index - fit_range)
+        end = min(len(data_minus_fit), peak_index + fit_range)
 
-        mask = (self.bias >= peak_bias - 0.3) & (self.bias <= peak_bias + 0.3)
-        x_data = self.bias[mask]
-        y_data = data_minus_fit[mask]
+        x_data = self.bias[start:end]
+        y_data = data_minus_fit[start:end]
 
-
-        # fit_range = self.fit_range  # Number of points to include around the peak
-        # start = max(0, peak_index - fit_range)
-        # end = min(len(data_minus_fit), peak_index + fit_range)
-
-        # x_data = self.bias[start:end]
-        # y_data = data_minus_fit[start:end]
-
-        # initial_guess = [self.bias[peak_index], max(data_minus_fit)-0.1, 1]
-        
-        initial_guess = [peak_bias, max(y_data), 1]
+        initial_guess = [self.bias[peak_index], max(data_minus_fit)-0.1, 1]
         try:
             popt, pcov = curve_fit(lorentzian, x_data, y_data, p0=initial_guess, maxfev=4000)
         except RuntimeError as e:
@@ -291,11 +283,14 @@ class KPFMSpectrumAnalysis():
         x_fit = np.linspace(min(x_data), max(x_data), 1000)
         y_fit = lorentzian(x_fit, *popt)
 
-        if self.bias[peak_index] < 0:
-            print("No peak found in the data")
-            return axFit, axResiduals, axDataMinusFit
+
 
         axDataMinusFit.plot(self.bias, data_minus_fit, label='data - fit', color='blue')
+        
+        if self.bias[peak_index] < 0:
+                print("No peak found in the data")
+                return axFit, axResiduals, axDataMinusFit
+
         axDataMinusFit.plot(x_fit, y_fit, label=f'Lorentzian fit\nHeight: {a:.2f}\nFWHM: {fwhm:.2f}', color='red')
 
 

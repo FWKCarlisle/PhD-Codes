@@ -198,7 +198,7 @@ for file_name in file_list:
     Dip_start = 0.2
     Dip_end = 1
 
-    fit_range = 30
+    fit_range = 33
 
     # Create a Spectrum instance for each file
     # example_spectrum = Spectrum(path=path, fileName=file_name, channel='OC M1 Freq. Shift [AVG] (Hz)')

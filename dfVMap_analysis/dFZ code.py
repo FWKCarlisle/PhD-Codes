@@ -132,7 +132,7 @@ class Spectrum(output_data_spectra_dat):
             return axFit, axResiduals, axDataMinusFit
 
 
-path = r"C:\Users\Fwkca\OneDrive\Desktop\PhD Data\Nikhil visit BP\Spatial 7 - 22.08"
+path = r"C:\Users\Fwkca\OneDrive\Desktop\PhD Data\Nikhil visit BP\Spatial 7 - 22.08" # Path to the folder containing the .dat files
 
 # Get a list of all .dat files in the specified folder
 file_list = [f for f in os.listdir(path) if f.endswith('.dat')]
@@ -150,23 +150,21 @@ biases = []
 numbers = []
 
 
-file_beginning = "Z-Spectroscopy_BP_"
+file_beginning = "Z-Spectroscopy_BP_" # The beginning of the file name
 
 # file_list = file_list[0:3]
-on_atom_file = "00010"
+on_atom_file = "00046"
 # files = [
 #         ["00030","00031","00032"],
 #         ["00033","00034","00035"], #Sets of files with reference in the middle
 #         ["00036","00037","00038"],
 #         ["00039","00040","00041"],
 #         ["00042","00043","00044"]]
-files = ["00053","00052","00050","00049","00048","00047","00055","00056","00057","00061","00058",]
-Dip_start = 0.2
-Dip_end = 1
-fit_range = 33
+files = ["00053","00052","00050","00049","00048","00047","00055","00056","00057","00061","00058",] #Sets of files numbers to be plotted
+
 
 # type = "aba" # reference after every scan
-type = "ab" # reference at start
+type = "ab" # reference at start 
 z_rels = []
 dfs = []
 all_dfs = []
@@ -177,7 +175,7 @@ if type == "aba":
     count = 0
     file_packet = 0
     for file_packets in files:
-        fig, [axData, axMinus, axMinusData] = plt.subplots(nrows=3, ncols=1, sharex=True)
+        fig, [axData, axMinus, axMinusData] = plt.subplots(nrows=3, ncols=1, sharex=True) 
         print("A " , file_packets)
         for number in file_packets:
             
@@ -186,7 +184,9 @@ if type == "aba":
             # Create a Spectrum instance for each file
             # example_spectrum = Spectrum(path=path, fileName=file_name, channel='OC M1 Freq. Shift [AVG] (Hz)')
             example_spectrum = Spectrum(path=path, fileName=file_name, channel='OC M1 Freq. Shift (Hz)')
-            
+        
+            # Get the x and y data for the specified channel
+
             z_rel = example_spectrum.x
             df = example_spectrum.y
             if count == 1:
@@ -284,5 +284,5 @@ if type == "ab":
 plt.title(f"Z-Spectroscopy BP All")
 plt.xlabel('Relative Z (m)')
 plt.ylabel('Frequency Shift (Hz)')
-plt.legend()
+# plt.legend()
 plt.show()

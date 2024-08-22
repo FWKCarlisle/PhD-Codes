@@ -175,7 +175,7 @@ def FindLatestFile(path):
     return latestFile
 
 #%%
-path = r"C:\Users\Fwkca\OneDrive\Desktop\PhD Data\Nikhil visit BP\Spatial 6"
+path = r"C:\Users\Fwkca\OneDrive\Desktop\PhD Data\Nikhil visit BP\Spatial 7 - 22.08"
 
 # Get a list of all .dat files in the specified folder
 file_list = [f for f in os.listdir(path) if f.endswith('.dat')]
@@ -206,7 +206,7 @@ for file_name in file_list:
     bias = example_spectrum.x
     df = example_spectrum.y
     # Run the KPFM spectrum analysis
-    example_spectrum.KPFMAnalysis(fit_range=fit_range, plotCalculation=True)
+    example_spectrum.KPFMAnalysis(fit_range=fit_range,plotCalculation=True)
     
     # Access the analysis results
     vContact = example_spectrum.vContact
@@ -235,7 +235,11 @@ for file_name in file_list:
 
     well_depth = max_residual - residual_mean 
     # print("Max residual:", max_residual)
-    print("File - ",file_name, " Bias " , max_bias, " Residual ", max_residual, " Well depth ", well_depth, " residual mean ", residual_mean)
+
+
+    # print("File - ",file_name, " Bias " , max_bias, " Residual ", max_residual, " Well depth ", well_depth, " residual mean ", residual_mean)
+    
+    
     #
     # Store the analysis results for each file
 
@@ -249,19 +253,20 @@ for file_name in file_list:
     well_depths.append(well_depth)
     
     plt.show()
+    
     # Do something with the analysis results for each file
     # ...
 
-print("Well positions", max_biases)
-print("Well Depths",well_depths)
+# print("Well positions", max_biases)
+# print("Well Depths",well_depths)
 
-plt.clf()
 
+# plt.clf()
 
 print(len(biases),len(dfs))
 
-for i in range(1,4):
-    plt.plot(biases[i],dfs[i], label = file_list[i]) #To offset, add + i/2
+# for i in range(1,4):
+    # plt.plot(biases[i],dfs[i], label = file_list[i]) #To offset, add + i/2
 plt.xlabel('Bias (V)')
 plt.ylabel('Frequency Shift (Hz)')
 plt.legend()

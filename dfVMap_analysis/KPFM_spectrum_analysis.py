@@ -226,6 +226,11 @@ class KPFMSpectrumAnalysis():
         
         def lorentzian(x, x0, a, gamma):
             return a * gamma**2 / ((x - x0)**2 + gamma**2)
+        
+        
+
+        def gaussian(x, x0, a, sigma):
+            return a * np.exp(-((x - x0)**2) / (2 * sigma**2))
 
 
         if axFit == None and axResiduals == None:
@@ -259,8 +264,12 @@ class KPFMSpectrumAnalysis():
         peak_bias = self.bias[peak_index]
 
 
-        #fit lorentzian
-        
+        # mask = (self.bias > 0)
+        # self.bias = self.bias[mask]
+        # data_minus_fit = data_minus_fit[mask]
+        # #fit lorentzian
+
+
         
         fit_range = self.fit_range  # Number of points to include around the peak
         start = max(0, peak_index - fit_range)
@@ -269,19 +278,20 @@ class KPFMSpectrumAnalysis():
         x_data = self.bias[start:end]
         y_data = data_minus_fit[start:end]
 
-        initial_guess = [self.bias[peak_index], max(data_minus_fit)-0.1, 1]
+
+        initial_guess = [peak_bias, max(data_minus_fit)-0.1, 1]
         try:
-            popt, pcov = curve_fit(lorentzian, x_data, y_data, p0=initial_guess, maxfev=4000)
+            popt, pcov = curve_fit(gaussian, x_data, y_data, p0=initial_guess, maxfev=4000)
         except RuntimeError as e:
             print(f"Error in curve fitting: {e}")
             return axFit, axResiduals, axDataMinusFit
         
         x0, a, gamma = popt
-        fwhm = 2 * gamma
+        fwhm = 2.355 * gamma
 
         # Plot the fitted Lorentzian
         x_fit = np.linspace(min(x_data), max(x_data), 1000)
-        y_fit = lorentzian(x_fit, *popt)
+        y_fit = gaussian(x_fit, *popt)
 
 
 

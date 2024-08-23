@@ -52,17 +52,24 @@ import numpy as np
 # #'Rough depth error
 # depth_errors_5 =      np.array([0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05])
 
-                             
-number =                       [517   , 518   , 519   , 520   , 521   , 522   , 523   , 524   , 525   , 526   , 527   , 528   , 529   , 530   ] #Number on image
-file_name =                    [336   , 337   , 338   , 339   , 340   , 341   , 342   , 343   , 344   , 345   , 346   , 347   , 348   , 349   ] #File name
-distances_5 =         np.array([0     , 0.44  , 0.93  , 1.85  , 1.39  , 2.33  , 2.79  ,-0.14  ,-0.55  ,-1.03  ,-1.48  ,-1.92  ,-2.40  ,-2.75  ]) #Distance measured in nm
-d_errors_5 =          np.array([0.02  , 0.02  , 0.02  , 0.02  , 0.02  , 0.02  , 0.02  , 0.02  , 0.02  , 0.02  , 0.02  , 0.02  , 0.02  , 0.03  ]) #Error in distance
-max_bias_5 =          np.array([0.3360, 0.3573, 0.5333, 0.4107, 0.6507, 0.7467, 0.6453, 0.3307, 0.3413, 0.4320, 0.5333, 0.7360, 0.7253, 0.4427]) #Well position
-well_depths_5 =       np.array([0.1744, 0.1640, 0.0986, 0.1596, 0.1012, 0.0508, 0.0438, 0.1857, 0.1886, 0.1767, 0.1204, 0.1022, 0.0689, 0.0448]) #Well depth
-depth_errors_5 =      np.array([0.05, 0.05, 0.05,0.05, 0.05, 0.05,0.05, 0.05, 0.05,0.05, 0.05, 0.05,0.05, 0.05]) #'Rough depth error
+#DATA for spatial 6 (?)               
+# number =                       [517   , 518   , 519   , 520   , 521   , 522   , 523   , 524   , 525   , 526   , 527   , 528   , 529   , 530   ] #Number on image
+# file_name =                    [336   , 337   , 338   , 339   , 340   , 341   , 342   , 343   , 344   , 345   , 346   , 347   , 348   , 349   ] #File name 
+# distances_5 =         np.array([0     , 0.44  , 0.93  , 1.85  , 1.39  , 2.33  , 2.79  ,-0.14  ,-0.55  ,-1.03  ,-1.48  ,-1.92  ,-2.40  ,-2.75  ]) #Distance measured in nm
+# d_errors_5 =          np.array([0.02  , 0.02  , 0.02  , 0.02  , 0.02  , 0.02  , 0.02  , 0.02  , 0.02  , 0.02  , 0.02  , 0.02  , 0.02  , 0.03  ]) #Error in distance
+# max_bias_5 =          np.array([0.3360, 0.3573, 0.5333, 0.4107, 0.6507, 0.7467, 0.6453, 0.3307, 0.3413, 0.4320, 0.5333, 0.7360, 0.7253, 0.4427]) #Well position
+# well_depths_5 =       np.array([0.1744, 0.1640, 0.0986, 0.1596, 0.1012, 0.0508, 0.0438, 0.1857, 0.1886, 0.1767, 0.1204, 0.1022, 0.0689, 0.0448]) #Well depth
+# depth_errors_5 =      np.array([0.05, 0.05, 0.05,0.05, 0.05, 0.05,0.05, 0.05, 0.05,0.05, 0.05, 0.05,0.05, 0.05]) #'Rough depth error
 
-
-
+number =                       [] #Number on image
+file_name =                    [390  , 391 , 392 , 393 , 394 , 395 , 396 , 397 , 398 , 399 ] #File name 
+distances_5 =         np.array([0    , 30  , 60  , 90  , 120 , 150 , 0   , -30 , -60 ,-90  ]) #Distance measured in nm
+d_errors_5 =          np.array([0.02 , 0.02, 0.02, 0.02, 0.02, 0.02, 0.02, 0.02, 0.02, 0.02]) #Error in distance
+max_bias_5 =          np.array([-0.14,-0.17,-0.18,-0.20,-0.16,-0.18,-0.18,-0.13,-0.15,-0.15]) #Well position
+max_bias_5 =          np.array([0.37666667, 0.40000004, 0.41666669, 0.41000003, 0.42666668, 0.44, 0.38, 0.37333333, 0.36666667, 0.32333338])
+well_depths_5 =       np.array([0.07 , 0   , 0.12, 0.11, 0.11, 0.10, 0.07, 0.05, 0.06, 0.05]) #Well depth
+FWHM_5 =              np.array([0.04 , 0   , 0.04, 0.04, 0.04, 0.04, 0.04, 0.04, 0.04, 0.03])#abs value of FWHM
+depth_errors_5 =      np.array([0.05 , 0.05, 0.05, 0.05, 0.05, 0.05,0.05 , 0.05, 0.05, 0.05]) #'Rough depth error
 
 
 
@@ -96,11 +103,11 @@ def calculate_best_fit_line(x, y):
 # print(len(distances_5),len(max_residual_5),len(max_bias_5))
 # plt.scatter(distances_5, max_residual_5, color='red', label='Max residual')
 print(len(distances_5),len(well_depths_5))
-plt.scatter(distances_5, max_bias_5, color='green', label='Max bias')
+plt.scatter(distances_5, FWHM_5, color='green', label='Max bias')
 # plt.errorbar(distances_5, well_depths_5, xerr=d_errors_5, yerr=depth_errors_5, color='green', fmt='o', label='Well depth')
 
 plt.xlabel('Distance (nm)')
-plt.ylabel('Well position (Hz)')
-plt.xlim(-5,5)
-plt.title('Contact potential against distance')
+plt.ylabel('FWHM')
+plt.xlim(-155,155)
+plt.title('dI/dV Curve analysis graphs')
 plt.show()

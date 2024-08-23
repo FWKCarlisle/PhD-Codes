@@ -132,7 +132,7 @@ class Spectrum(output_data_spectra_dat):
             return axFit, axResiduals, axDataMinusFit
 
 
-path = r"C:\Users\Fwkca\OneDrive\Desktop\PhD Data\Nikhil visit BP\Spatial 7 - 22.08" # Path to the folder containing the .dat files
+path = r"C:\Users\Fwkca\OneDrive\Desktop\PhD Data\Nikhil visit BP\Spatial 7 - DfZ" # Path to the folder containing the .dat files
 
 # Get a list of all .dat files in the specified folder
 file_list = [f for f in os.listdir(path) if f.endswith('.dat')]

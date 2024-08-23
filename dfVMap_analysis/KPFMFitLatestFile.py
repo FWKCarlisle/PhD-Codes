@@ -175,7 +175,7 @@ def FindLatestFile(path):
     return latestFile
 
 #%%
-path = r"C:\Users\Fwkca\OneDrive\Desktop\PhD Data\Nikhil visit BP\Spatial 7 - 22.08"
+path = r"C:\Users\Fwkca\OneDrive\Desktop\PhD Data\Nikhil visit BP\Spatial 8"
 
 # Get a list of all .dat files in the specified folder
 file_list = [f for f in os.listdir(path) if f.endswith('.dat')]
@@ -193,71 +193,75 @@ biases = []
 dfs = []
 
 
+count = 0
+
 for file_name in file_list:
-    
-    Dip_start = 0.2
-    Dip_end = 1
+    if count < 4:
+        Dip_start = 0.2
+        Dip_end = 1
 
-    fit_range = 33
+        fit_range = 30
 
-    # Create a Spectrum instance for each file
-    # example_spectrum = Spectrum(path=path, fileName=file_name, channel='OC M1 Freq. Shift [AVG] (Hz)')
-    example_spectrum = Spectrum(path=path, fileName=file_name, channel='OC M1 Freq. Shift (Hz)')
-    bias = example_spectrum.x
-    df = example_spectrum.y
-    # Run the KPFM spectrum analysis
-    example_spectrum.KPFMAnalysis(fit_range=fit_range,plotCalculation=True)
-    
-    # Access the analysis results
-    vContact = example_spectrum.vContact
-    fit = example_spectrum.fit
-    dfAtVContact = example_spectrum.dfAtVContact
-    vContactErr = example_spectrum.vContactErr
-    dfAtVContactErr = example_spectrum.dfAtVContactErr
-    residuals = example_spectrum.fitInfo.residual
-    bias = example_spectrum.bias
+        # Create a Spectrum instance for each file
+        # example_spectrum = Spectrum(path=path, fileName=file_name, channel='OC M1 Freq. Shift [AVG] (Hz)')
+        example_spectrum = Spectrum(path=path, fileName=file_name, channel='OC M1 Freq. Shift (Hz)')
+        bias = example_spectrum.x
+        df = example_spectrum.y
+        # Run the KPFM spectrum analysis
+        example_spectrum.KPFMAnalysis(fit_range=fit_range,plotCalculation=True)
 
-    dfs.append(df)
-    biases.append(bias)
+        # Access the analysis results
+        vContact = example_spectrum.vContact
+        fit = example_spectrum.fit
+        dfAtVContact = example_spectrum.dfAtVContact
+        vContactErr = example_spectrum.vContactErr
+        dfAtVContactErr = example_spectrum.dfAtVContactErr
+        residuals = example_spectrum.fitInfo.residual
+        bias = example_spectrum.bias
 
-    # Find the maximum residual and its corresponding bias value past 0.1V
-    
+        dfs.append(df)
+        biases.append(bias)
 
-    mask = bias > 0.1
-    # print(np.any(mask))
-    # print(len(bias),len(bias[mask]), len(residuals),len(residuals[mask]))
-
-    max_residual = max(residuals[mask])
-    max_bias = bias[mask]
-    max_bias = max_bias[residuals[mask] == max_residual].values[0]
-    
-    residual_mean = np.mean(residuals)
-
-    well_depth = max_residual - residual_mean 
-    # print("Max residual:", max_residual)
+        # Find the maximum residual and its corresponding bias value past 0.1V
 
 
-    # print("File - ",file_name, " Bias " , max_bias, " Residual ", max_residual, " Well depth ", well_depth, " residual mean ", residual_mean)
-    
-    
-    #
-    # Store the analysis results for each file
+        mask = bias > 0.1
+        # print(np.any(mask))
+        # print(len(bias),len(bias[mask]), len(residuals),len(residuals[mask]))
+
+        max_residual = max(residuals[mask])
+        max_bias = bias[mask]
+        max_bias = max_bias[residuals[mask] == max_residual].values[0]
+
+        residual_mean = np.mean(residuals)
+
+        well_depth = max_residual - residual_mean 
+        # print("Max residual:", max_residual)
 
 
-    
+        # print("File - ",file_name, " Bias " , max_bias, " Residual ", max_residual, " Well depth ", well_depth, " residual mean ", residual_mean)
 
-    V_contacts.append(vContact)
-    V_contact_errs.append(vContactErr)
-    max_residuals.append(max(residuals))
-    max_biases.append(max_bias)
-    well_depths.append(well_depth)
-    
-    plt.show()
-    
+
+        #
+        # Store the analysis results for each file
+
+
+
+        fileNames.append(file_name)
+        V_contacts.append(vContact)
+        V_contact_errs.append(vContactErr)
+        max_residuals.append(max(residuals))
+        max_biases.append(max_bias)
+        well_depths.append(well_depth)
+        plt.title(file_name)
+        plt.show()
+
+
+        count += 1
     # Do something with the analysis results for each file
     # ...
-
-# print("Well positions", max_biases)
+print("File names", fileNames)
+print("Well positions", max_biases)
 # print("Well Depths",well_depths)
 
 

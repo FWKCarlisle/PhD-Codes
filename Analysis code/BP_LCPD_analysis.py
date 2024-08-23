@@ -65,11 +65,12 @@ number =                       [] #Number on image
 file_name =                    [390  , 391 , 392 , 393 , 394 , 395 , 396 , 397 , 398 , 399 ] #File name 
 distances_5 =         np.array([0    , 30  , 60  , 90  , 120 , 150 , 0   , -30 , -60 ,-90  ]) #Distance measured in nm
 d_errors_5 =          np.array([0.02 , 0.02, 0.02, 0.02, 0.02, 0.02, 0.02, 0.02, 0.02, 0.02]) #Error in distance
-max_bias_5 =          np.array([-0.14,-0.17,-0.18,-0.20,-0.16,-0.18,-0.18,-0.13,-0.15,-0.15]) #Well position
+LCPD_5 =          np.array([-0.14,-0.17,-0.18,-0.20,-0.16,-0.18,-0.18,-0.13,-0.15,-0.15]) #Well position
 max_bias_5 =          np.array([0.37666667, 0.40000004, 0.41666669, 0.41000003, 0.42666668, 0.44, 0.38, 0.37333333, 0.36666667, 0.32333338])
-well_depths_5 =       np.array([0.07 , 0   , 0.12, 0.11, 0.11, 0.10, 0.07, 0.05, 0.06, 0.05]) #Well depth
-FWHM_5 =              np.array([0.04 , 0   , 0.04, 0.04, 0.04, 0.04, 0.04, 0.04, 0.04, 0.03])#abs value of FWHM
-depth_errors_5 =      np.array([0.05 , 0.05, 0.05, 0.05, 0.05, 0.05,0.05 , 0.05, 0.05, 0.05]) #'Rough depth error
+well_depths_5 =       np.array([0.09 , 0.12   , 0.15, 0.16, 0.17, 0.15, 0.11, 0.06, 0.09, 0.08]) #Well depth
+FWHM_5 =              np.array([0.10 , 0.09   , 0.08, 0.08, 0.07, 0.06, 0.09, 0.09, 0.11, 0.15])#abs value of FWHM
+depth_errors_5 =      np.array([0.01 , 0.01, 0.01, 0.01, 0.01, 0.01,0.01 , 0.01, 0.01, 0.01]) #'Rough depth error
+FWHM_errors_5 =       np.array([0.01 , 0.01, 0.005, 0.005, 0.005, 0.005,0.005 , 0.01, 0.01, 0.01]) #'Rough depth error
 
 
 
@@ -103,11 +104,11 @@ def calculate_best_fit_line(x, y):
 # print(len(distances_5),len(max_residual_5),len(max_bias_5))
 # plt.scatter(distances_5, max_residual_5, color='red', label='Max residual')
 print(len(distances_5),len(well_depths_5))
-plt.scatter(distances_5, FWHM_5, color='green', label='Max bias')
+plt.errorbar(distances_5, well_depths_5,yerr=depth_errors_5, fmt= 'o', color='green', label='Max bias')
 # plt.errorbar(distances_5, well_depths_5, xerr=d_errors_5, yerr=depth_errors_5, color='green', fmt='o', label='Well depth')
 
 plt.xlabel('Distance (nm)')
-plt.ylabel('FWHM')
+plt.ylabel('Well Depth (V) ')
 plt.xlim(-155,155)
 plt.title('dI/dV Curve analysis graphs')
 plt.show()

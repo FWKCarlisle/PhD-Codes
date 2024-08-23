@@ -210,7 +210,7 @@ class KPFMSpectrumAnalysis():
         return r
     
     
-    def PlotVContactCalculation(self, axFit=None, axResiduals=None):
+    def PlotVContactCalculation(self, axFit=None, axResiduals=None, offset=None):
         """
         Use this method to visualise the quality of the data and the contact 
         potential calculation. 
@@ -258,50 +258,61 @@ class KPFMSpectrumAnalysis():
         axResiduals.set_xlabel('bias / V')
         axResiduals.grid()
 
-
+        
         data_minus_fit = -(self.df - self.fit)
         peak_index = np.argmax(data_minus_fit)
         peak_bias = self.bias[peak_index]
-
 
         # mask = (self.bias > 0)
         # self.bias = self.bias[mask]
         # data_minus_fit = data_minus_fit[mask]
         # #fit lorentzian
 
-
-        
         fit_range = self.fit_range  # Number of points to include around the peak
         start = max(0, peak_index - fit_range)
         end = min(len(data_minus_fit), peak_index + fit_range)
 
         x_data = self.bias[start:end]
         y_data = data_minus_fit[start:end]
+        if offset is not None:
+        # Add an offset to the data
+            offset = abs(min(y_data)) + offset  # Ensure all y_data values are positive
+            y_data = y_data + offset
 
-
-        initial_guess = [peak_bias, max(data_minus_fit)-0.1, 1]
+        initial_guess = [peak_bias, max(y_data) - 0.1, 1]
         try:
             popt, pcov = curve_fit(gaussian, x_data, y_data, p0=initial_guess, maxfev=4000)
         except RuntimeError as e:
             print(f"Error in curve fitting: {e}")
             return axFit, axResiduals, axDataMinusFit
-        
+
         x0, a, gamma = popt
         fwhm = 2.355 * gamma
 
-        # Plot the fitted Lorentzian
+        perr = np.sqrt(np.diag(pcov))
+        error_x0, error_a, error_gamma = perr
+        error_fwhm = 2.355 * error_gamma
+
+        # Plot the fitted Gaussian with offset
         x_fit = np.linspace(min(x_data), max(x_data), 1000)
         y_fit = gaussian(x_fit, *popt)
 
+        
+        print(f"Fitted parameters:")
+        print(f"Center (x0): {x0} ± {error_x0}")
+        print(f"Height (a): {a} ± {error_a}")
+        print(f"FWHM: {fwhm} ± {error_fwhm}")
 
 
         axDataMinusFit.plot(self.bias, data_minus_fit, label='data - fit', color='blue')
+        # axDataMinusFit.plot(x_fit, y_fit - offset, label='fitted Gaussian', color='red')  # Subtract the offset for plotting
         
         if self.bias[peak_index] < 0:
                 print("No peak found in the data")
                 return axFit, axResiduals, axDataMinusFit
-
-        axDataMinusFit.plot(x_fit, y_fit, label=f'Lorentzian fit\nHeight: {a:.2f}\nFWHM: {fwhm:.2f}', color='red')
+        if offset is not None:
+            y_fit = y_fit - offset
+        axDataMinusFit.errorbar(x_fit, y_fit, label=f'Lorentzian fit\nHeight: {a:.2f}\nFWHM: {fwhm:.2f}', color='red')
 
 
 

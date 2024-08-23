@@ -5,6 +5,8 @@ from KPFM_spectrum_analysis import KPFMSpectrumAnalysis
 import matplotlib.pyplot as plt
 import os
 import numpy as np
+from scipy.optimize import curve_fit
+from scipy.signal import find_peaks
 
 class Spectrum(output_data_spectra_dat):
     
@@ -170,6 +172,11 @@ dfs = []
 all_dfs = []
 all_zs = []
 
+def gaussian(x, a, x0, sigma):
+    return a * np.exp(-(x - x0) ** 2 / (2 * sigma ** 2))
+
+def func(x, a, b, c, offset):
+    return a * np.exp(-0.5 * np.power((x-b) / c, 2.0)) + offset
 
 if type == "aba":
     count = 0
@@ -258,15 +265,32 @@ if type == "ab":
         
         z_rel = example_spectrum.x
         df = example_spectrum.y
-        print(df)
         z_rels.append(z_rel)
         dfs.append(df)
         numbers.append(number)
 
+        Minus_curve = -(df - atom_df)
+        smoothed_minus = np.convolve(Minus_curve, np.ones(5)/5, mode='same')
+
         axData.plot(z_rel, df, label=file_name)
         axData.plot(atom_z_rel, atom_df, label=on_atom_file_name)
-        axMinus.plot(z_rel, df - atom_df, label=file_name)
         
+        # axMinus.plot(z_rel, Minus_curve, label=file_name)
+        axMinus.plot(z_rel, smoothed_minus, label="Smoothed")
+
+        peak_index = np.argmax(Minus_curve)
+        peak_z = z_rel[peak_index]
+        # if peak_z < 
+        fit_range = 25  # Number of points to include around the peak
+        start = max(0, peak_index - fit_range)
+        end = min(len(z_rel), peak_index + fit_range)
+
+        x_data = z_rel[start:end]
+        y_data = Minus_curve[start:end]
+
+        axMinus.plot(x_data, y_data, 'ro', label="Data")
+
+
         plt.xlabel('Relative Z (m)')
         plt.ylabel('Frequency Shift (Hz)')
         plt.title(f"Z-Spectroscopy BP {number}")

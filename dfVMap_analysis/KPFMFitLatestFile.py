@@ -101,7 +101,7 @@ class Spectrum(output_data_spectra_dat):
     # =========================================================================
     
     def KPFMAnalysis(self, fit_range=25, xAdatomCentre=None, yAdatomCentre=None, 
-                     plotCalculation=False, axFit=None, axResiduals=None, e_min=None, e_max=None, ):
+                     plotCalculation=False, axFit=None, axResiduals=None, e_min=None, e_max=None, offset=None ):
         """
         From KPFM spectra, we want to calculate the Vcontact value. This 
         involves fitting the spectrum data, df(V), to a parabola y=ax**2+bx+c
@@ -154,7 +154,7 @@ class Spectrum(output_data_spectra_dat):
             self.r = kpfmAnalysis.CalcR(self.x_pos, self.y_pos, xAdatomCentre, yAdatomCentre)
             
         if plotCalculation == True: 
-            axFit, axResiduals, axDataMinusFit = kpfmAnalysis.PlotVContactCalculation(axFit, axResiduals)
+            axFit, axResiduals, axDataMinusFit = kpfmAnalysis.PlotVContactCalculation(axFit, axResiduals, offset)
             return axFit, axResiduals, axDataMinusFit
 
 
@@ -196,11 +196,13 @@ dfs = []
 count = 0
 
 for file_name in file_list:
-    if count < 4:
+    if count < 25:
         Dip_start = 0.2
         Dip_end = 1
 
         fit_range = 30
+
+        offset = 0
 
         # Create a Spectrum instance for each file
         # example_spectrum = Spectrum(path=path, fileName=file_name, channel='OC M1 Freq. Shift [AVG] (Hz)')
@@ -208,7 +210,10 @@ for file_name in file_list:
         bias = example_spectrum.x
         df = example_spectrum.y
         # Run the KPFM spectrum analysis
-        example_spectrum.KPFMAnalysis(fit_range=fit_range,plotCalculation=True)
+        if offset != None or offset != 0:
+            example_spectrum.KPFMAnalysis(fit_range=fit_range,offset = offset, plotCalculation=True)
+        else:
+            example_spectrum.KPFMAnalysis(fit_range=fit_range, plotCalculation=True)
 
         # Access the analysis results
         vContact = example_spectrum.vContact

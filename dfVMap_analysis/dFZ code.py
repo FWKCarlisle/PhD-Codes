@@ -134,7 +134,7 @@ class Spectrum(output_data_spectra_dat):
             return axFit, axResiduals, axDataMinusFit
 
 
-path = r"C:\Users\Fwkca\OneDrive\Desktop\PhD Data\Nikhil visit BP\Spatial 7 - DfZ" # Path to the folder containing the .dat files
+path = r"C:\Users\Fwkca\OneDrive\Desktop\PhD Data\Nikhil visit BP\Spatial 10 - dFZ" # Path to the folder containing the .dat files
 
 # Get a list of all .dat files in the specified folder
 file_list = [f for f in os.listdir(path) if f.endswith('.dat')]
@@ -155,14 +155,14 @@ numbers = []
 file_beginning = "Z-Spectroscopy_BP_" # The beginning of the file name
 
 # file_list = file_list[0:3]
-on_atom_file = "00046"
+on_atom_file = "00183"
 # files = [
 #         ["00030","00031","00032"],
 #         ["00033","00034","00035"], #Sets of files with reference in the middle
 #         ["00036","00037","00038"],
 #         ["00039","00040","00041"],
 #         ["00042","00043","00044"]]
-files = ["00053","00052","00050","00049","00048","00047","00055","00056","00057","00061","00058",] #Sets of files numbers to be plotted
+files = ["00228","00230","00232","00234","00236","00238","00241","00244","00246","00248",] #Sets of files numbers to be plotted
 
 
 # type = "aba" # reference after every scan
@@ -288,7 +288,7 @@ if type == "ab":
         x_data = z_rel[start:end]
         y_data = Minus_curve[start:end]
 
-        axMinus.plot(x_data, y_data, 'ro', label="Data")
+        # axMinus.plot(x_data, y_data, 'ro', label="Data")
 
 
         plt.xlabel('Relative Z (m)')
@@ -308,5 +308,5 @@ if type == "ab":
 plt.title(f"Z-Spectroscopy BP All")
 plt.xlabel('Relative Z (m)')
 plt.ylabel('Frequency Shift (Hz)')
-# plt.legend()
+plt.legend()
 plt.show()

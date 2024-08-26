@@ -162,7 +162,12 @@ on_atom_file = "00183"
 #         ["00036","00037","00038"],
 #         ["00039","00040","00041"],
 #         ["00042","00043","00044"]]
-files = ["00228","00230","00232","00234","00236","00238","00241","00244","00246","00248",] #Sets of files numbers to be plotted
+# files = ["00228","00230","00232","00234","00236","00238","00241","00244","00246","00248",] #Sets of files numbers to be plotted
+# files = ["00228","00229","00231","00233","00235","00237","00240","00243","00245","00247",]
+# files = ["00186","00187","00189","00191","00193","00195","00197","00203","00201","00204",]
+# files = ["00186","00188","00190","00192","00194","00196","00198","00200","00202","00205",]
+# files = ["00208","00209","00211","00213","00215","00217","00219","00221","00223","00225",]
+files = ["00208","00210","00212","00214","00216","00218","00220","00222","00224","00226",]
 
 
 # type = "aba" # reference after every scan
@@ -174,6 +179,18 @@ all_zs = []
 
 def gaussian(x, a, x0, sigma):
     return a * np.exp(-(x - x0) ** 2 / (2 * sigma ** 2))
+
+def lorentzian(x, x0, a, gamma):
+            return a * gamma**2 / ((x - x0)**2 + gamma**2)
+
+def fit_gaussian(x, y):
+    popt, _ = curve_fit(gaussian, x, y, p0=[1, np.mean(x), np.std(x)])
+    return popt
+
+def fit_lorentzian(x, y):
+    popt, _ = curve_fit(lorentzian, x, y, p0=[np.mean(x), 1, np.std(x)])
+    return popt
+
 
 def func(x, a, b, c, offset):
     return a * np.exp(-0.5 * np.power((x-b) / c, 2.0)) + offset
@@ -251,11 +268,12 @@ if type == "ab":
     atom_df = atom_spectrum.y
     atom_z_rel = atom_spectrum.x
     
+    offset = 1
 
-    print(atom_df)
+    # print(atom_df)
 
     for number in files:
-        fig, [axData, axMinus] = plt.subplots(nrows=2, ncols=1, sharex=True)
+        fig, [axData, axMinus,axSmoothMinus] = plt.subplots(nrows=3, ncols=1, sharex=True)
 
         file_name = file_beginning+number + ".dat"    
         print(file_name)
@@ -269,26 +287,109 @@ if type == "ab":
         dfs.append(df)
         numbers.append(number)
 
-        Minus_curve = -(df - atom_df)
-        smoothed_minus = np.convolve(Minus_curve, np.ones(5)/5, mode='same')
+        smoothed_df = np.convolve(df, np.ones(5)/5, mode='same')
+        smoothed_atom_df = np.convolve(atom_df, np.ones(5)/5, mode='same')
 
         axData.plot(z_rel, df, label=file_name)
         axData.plot(atom_z_rel, atom_df, label=on_atom_file_name)
         
-        # axMinus.plot(z_rel, Minus_curve, label=file_name)
-        axMinus.plot(z_rel, smoothed_minus, label="Smoothed")
+        # axSmooth.plot(z_rel, smoothed_df, label=file_name)
+        # axSmooth.plot(atom_z_rel, smoothed_atom_df, label=on_atom_file_name)
 
+
+        Minus_curve = -(df - atom_df)
+        # smoothed_minus = np.convolve(Minus_curve, np.ones(5)/5, mode='same')
+
+       
+        axMinus.plot(z_rel, Minus_curve, label=number)
+        # axMinus.plot(z_rel, smoothed_minus, label="Smoothed")
+
+        smoothed_minus = -(smoothed_df - smoothed_atom_df)
+        axSmoothMinus.plot(z_rel, smoothed_minus, label=number)
+        # only find peaks in the first half of the data 
+        
         peak_index = np.argmax(Minus_curve)
         peak_z = z_rel[peak_index]
-        # if peak_z < 
-        fit_range = 25  # Number of points to include around the peak
+       
+        if Minus_curve[peak_index] - Minus_curve[peak_index+1] > 0.1 or number == "00233":
+            exclude_points = 2
+             # if the peak is an outlier point, find the next point
+            print("Peak is an outlier point")
+            print("Peak next point: ", Minus_curve[peak_index] - Minus_curve[peak_index+1])
+
+            mask = np.ones(len(Minus_curve), dtype=bool)
+            start_exclude = max(0, peak_index - exclude_points)
+            end_exclude = min(len(Minus_curve), peak_index + exclude_points + 1)
+            mask[start_exclude:end_exclude] = False
+
+            # Use the mask to find the new peak index
+            filtered_curve = Minus_curve[mask]
+            new_peak_index_in_filtered = np.argmax(filtered_curve)
+
+            # Map the index back to the original array
+            new_peak_index = np.where(mask)[0][new_peak_index_in_filtered]
+
+            print("New curve max index: ", new_peak_index)
+            print("New curve max: ", Minus_curve[new_peak_index])
+
+            # Update the peak_index to the newly found peak
+            peak_index = new_peak_index
+
+            print("Curve max: ", Minus_curve[peak_index])
+            peak_index = np.argmax(Minus_curve[0:peak_index])
+            print("New curve max: ", Minus_curve[peak_index])
+        
+        fit_range = 60  # Number of points to include around the peak
         start = max(0, peak_index - fit_range)
         end = min(len(z_rel), peak_index + fit_range)
 
         x_data = z_rel[start:end]
-        y_data = Minus_curve[start:end]
+        y_data = smoothed_minus[start:end]
 
         # axMinus.plot(x_data, y_data, 'ro', label="Data")
+
+        if offset is not None:
+        # Add an offset to the data
+            # offset = abs(min(y_data)) + offset # Ensure all y_data values are positive
+            offset = 0.1
+            print("Offset: ", offset)
+            y_data = y_data + offset
+            # print("Y data: ", y_data)
+
+        initial_guess = [peak_z, max(y_data) - 0.1, 1]
+        initial_guess_1 = [1, np.mean(x_data), np.std(x_data)]
+        # print("Initial guess: ", initial_guess_1)
+        try:
+            popt, pcov = curve_fit(gaussian, x_data, y_data, p0=initial_guess_1, maxfev=10000)
+            print("Popt: ", popt)
+        except RuntimeError as e:
+            print(f"Error in curve fitting: {e}")
+            # return axFit, axResiduals, axDataMinusFit
+
+        x0, a, gamma = popt
+        a = a * 1E10
+        gamma = gamma * 1E10 
+        fwhm = 2.355 * gamma
+
+        perr = np.sqrt(np.diag(pcov))
+        error_x0, error_a, error_gamma = perr
+        error_a = error_a * 1E10
+        error_gamma = error_gamma * 1E10
+
+        error_fwhm = 2.355 * error_gamma
+
+        print(f"Fitted parameters:")
+        print(f"Center (x0): {x0} ± {error_x0}")
+        print(f"Height (a): {a} ± {error_a}")
+        print(f"FWHM: {fwhm} ± {error_fwhm}")
+
+
+        # Plot the fitted Gaussian with offset
+        x_fit = np.linspace(min(x_data), max(x_data), 1000)
+        y_fit = gaussian(x_fit, *popt)
+        # print("Y fit: ", y_fit)
+        axSmoothMinus.plot(x_fit, y_fit-offset, 'b-', label=f'Lorentzian fit\nHeight: {a:.3f}\nFWHM: {fwhm:.3f}')
+
 
 
         plt.xlabel('Relative Z (m)')
@@ -296,6 +397,7 @@ if type == "ab":
         plt.title(f"Z-Spectroscopy BP {number}")
         axData.legend()
         axMinus.legend()
+        axSmoothMinus.legend()
         plt.show()
         
     plt.clf()

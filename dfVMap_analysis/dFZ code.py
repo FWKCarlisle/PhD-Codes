@@ -136,7 +136,7 @@ class Spectrum(output_data_spectra_dat):
             return axFit, axResiduals, axDataMinusFit
 
 
-path = r"C:\Users\Fwkca\OneDrive\Desktop\PhD Data\Nikhil visit BP\Spatial 7 - dFZ" # Path to the folder containing the .dat files
+path = r"C:\Users\Fwkca\OneDrive\Desktop\PhD Data\Nikhil visit BP\Spatial 12 - dFZ" # Path to the folder containing the .dat files
 
 # Get a list of all .dat files in the specified folder
 file_list = [f for f in os.listdir(path) if f.endswith('.dat')]
@@ -157,7 +157,7 @@ numbers = []
 file_beginning = "Z-Spectroscopy_BP_" # The beginning of the file name
 
 # file_list = file_list[0:3]
-on_atom_file = "00009"
+on_atom_file = "00349"
 # files = [
 #         ["00015","00016","00017"],
 #         ["00018","00019","00020"], #Sets of files with reference in the middle Spatial 7 Up
@@ -178,12 +178,12 @@ on_atom_file = "00009"
 #         ["00039","00009","00041"],
 #         ["00042","00009","00044"]]
 
-files = [
-        ["00015","00009","00017"],
-        ["00018","00009","00020"], #Sets of files with reference in the middle Spatial 7 Up With 0009 as reference
-        ["00021","00009","00023"],
-        ["00024","00009","00026"],
-        ["00027","00009","00029"]]
+# files = [
+#         ["00015","00009","00017"],
+#         ["00018","00009","00020"], #Sets of files with reference in the middle Spatial 7 Up With 0009 as reference
+#         ["00021","00009","00023"],
+#         ["00024","00009","00026"],
+#         ["00027","00009","00029"]]
 
 # files = ["00047","00048","00049","00051","00052","00053"] #Sets of files numbers to be plotted ~Spatial 7 Left
 # files = ["00055","00056","00057","00061","00058"] #Sets of files numbers to be plotted ~Spatial 7 Right
@@ -194,15 +194,26 @@ files = [
 # files = ["00186","00187","00189","00191","00193","00195","00197","00203","00201","00204",]
 # files = ["00186","00188","00190","00192","00194","00196","00198","00200","00202","00205",]
 # files = ["00208","00209","00211","00213","00215","00217","00219","00221","00223","00225",]
-# files = ["00208","00210","00212","00214","00216","00218","00220","00222","00224","00226",] #27.08 Up
+# files = ["00208","00210","00212","00214","00216","00218","00220","00222","00224","00226",]
+#  #27.08 Up
 # files =  ["00284","00286","00288","00290","00293","00295","00297","00299","00301","00303"] # 27.08 Down
+# files =  ["00287","00289","00291","00294","00296","00298","00300","00302"] # 27.08 Up
 # files = ["00304","00306","00308","00318","00321","00324","00326",] # 27.08 left
 # files = ["00305","00307","00317","00319","00323","00325",] # 27.08 right
 
+#spatial 9 data UD
+# files = ["00119","00111","00112","00113","00114","00115","00116","00117","00118"]
+#LR
+# files = ["00131","00120","00121","00122","00123","00124","00125","00126","00127","00128","00129","00130",]
+
+#spatial 12 Left
+# files = ["00350","00352","00354","00356","00358","00360","00362","00364","00366","00368",] # 27.08 left
+#spatial 12 Right
+files = ["00351","00353","00355","00357","00359","00361","00363","00365","00367",] # 27.08 right
 
 
 # type = "aba" # reference after every scan
-type = "aba" # reference at start 
+type = "ab" # reference at start 
 z_rels = []
 dfs = []
 all_dfs = []
@@ -453,7 +464,7 @@ if type == "ab":
         axSmoothMinus.plot(z_rel, smoothed_minus, label=number)
         # only find peaks in the first half of the data 
 
-        x0, height, fwhm, error_x0, error_a, error_fwhm = fit_and_plot(z_rel, Minus_curve, axSmoothMinus, ["00288","00294"], number, "0-1", "b", fit_no=30, offset=offset)
+        x0, height, fwhm, error_x0, error_a, error_fwhm = fit_and_plot(z_rel, Minus_curve, axSmoothMinus, ["00119","00111","00112",], number, "0-1", "b", fit_no=45, offset=offset)
 
         As.append(height)
         FWHMS.append(fwhm)

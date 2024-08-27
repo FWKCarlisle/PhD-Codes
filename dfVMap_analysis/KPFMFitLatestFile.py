@@ -201,8 +201,8 @@ for file_name in file_list:
         Dip_end = 1
 
         fit_range = 30
-
-        offset = 0
+        Cutoff = True
+        offset = 1
 
         # Create a Spectrum instance for each file
         # example_spectrum = Spectrum(path=path, fileName=file_name, channel='OC M1 Freq. Shift [AVG] (Hz)')
@@ -210,8 +210,8 @@ for file_name in file_list:
         bias = example_spectrum.x
         df = example_spectrum.y
         # Run the KPFM spectrum analysis
-        if offset != None or offset != 0:
-            example_spectrum.KPFMAnalysis(fit_range=fit_range,offset = offset, plotCalculation=True)
+        if offset != None or offset != 0 or Cutoff == True:
+            example_spectrum.KPFMAnalysis(fit_range=fit_range,offset = offset,e_min = Dip_start, e_max = Dip_end, plotCalculation=True)
         else:
             example_spectrum.KPFMAnalysis(fit_range=fit_range, plotCalculation=True)
 

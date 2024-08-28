@@ -15,7 +15,9 @@ import matplotlib
 import matplotlib.pyplot as plt 
 from datetime import datetime
 
+
 matplotlib.rc('image', cmap='gray')
+
 #%% 
 
 class SamplingGrid():
@@ -374,25 +376,29 @@ class Experiment_dfVmap(python_nano.python_Nanonis_TCP): # define child class fo
 
     def Grid(self, xAtoms, yAtoms, upsampling=None, radSteps=None):
         
-        xCentre = np.average(xAtoms)
-        yCentre = np.average(yAtoms)
+        # xCentre = np.average(xAtoms)
+        # yCentre = np.average(yAtoms)
         
-        sg = SamplingGrid(self.gridDiameter, self.gridPointsPerDiameter,
-                                           xCentre, yCentre)
+        # sg = SamplingGrid(self.gridDiameter, self.gridPointsPerDiameter,
+        #                                    xCentre, yCentre)
 
-        xGrid, yGrid = sg.CircleGrid()
+        # xGrid, yGrid = sg.CircleGrid()
         
-        if upsampling is None: masks = None # Just make sure upsampling is set to None?
-        else: xGrid, yGrid, masks = sg.UpsamplingSteps(xGrid, yGrid,
-                                                     upsampling, radSteps)
+        # if upsampling is None: masks = None # Just make sure upsampling is set to None?
+        # else: xGrid, yGrid, masks = sg.UpsamplingSteps(xGrid, yGrid,
+        #                                              upsampling, radSteps)
         
-        xGrid, yGrid = sg.Rotate(xGrid, yGrid, xPivot=xCentre, yPivot=yCentre,
-                                 rot=self.theta)
+        # xGrid, yGrid = sg.Rotate(xGrid, yGrid, xPivot=xCentre, yPivot=yCentre,
+        #                          rot=self.theta)
 
-        xGrid, yGrid, masks = sg.RemoveSamplingAboveAtoms(xGrid, yGrid, xAtoms, yAtoms, # Comment out this? 
-                                                   self.gridAtomDiameterToAvoid,
-                                                   masks=masks)
+        # xGrid, yGrid, masks = sg.RemoveSamplingAboveAtoms(xGrid, yGrid, xAtoms, yAtoms, # Comment out this? 
+        #                                            self.gridAtomDiameterToAvoid,
+        #                                            masks=masks)
         
+        masks = None
+        xGrid = np.zeros(50)
+        yGrid = np.arrange(0, 2e-9, 20)
+
         return xGrid, yGrid, masks
     
         
@@ -490,6 +496,8 @@ class Experiment_dfVmap(python_nano.python_Nanonis_TCP): # define child class fo
                 
                 
                 # change bias slowly
+                #Change this to Z bias
+
                 self.Bias_set_slow(self.VForSpectra, time_to_take_seconds=1,
                                    num_of_steps=100)
                 
@@ -497,7 +505,11 @@ class Experiment_dfVmap(python_nano.python_Nanonis_TCP): # define child class fo
                 print("check tip is at spectra taking pos")
                 time.sleep(2) # wait
                 
-                self.Bias_SpectraStart(self.fileBaseName)
+
+                # take spectra
+                # Change to Z spectra
+                self.Z_SpectraStart(self.fileBaseName)
+                # self.Bias_SpectraStart(self.fileBaseName)
                 print("check spectra is done")
                 time.sleep(0.5) # wait
               
@@ -664,15 +676,18 @@ class Experiment_dfVmap(python_nano.python_Nanonis_TCP): # define child class fo
 
 #%% Inputs
 
-nPointsPerCalibration = 5
-zRelForMoving = 0.2e-9
+nPointsPerCalibration = 1 #points per atom track
+# zRelForMoving = 0.2e-9 #Change to 0
+# zRelForSpectra = 0e-9
+zRelForMoving = 0e-9
 zRelForSpectra = 0e-9
-VForMoving = 0.2
+
+VForMoving = -0.8
 VForSpectra = 0.6
 
 timeForAtomTracking = 20
-offDelay = 1
-fileBaseName = 'dfVMap_InSb_69_'
+offDelay = 1    ## off delay in z-controller 
+fileBaseName = 'dfVMap_test_'
 
 
 # xAtomsVec = np.array([0, 4, -2, 6, 0, 4], dtype=float)

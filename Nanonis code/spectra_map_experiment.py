@@ -397,7 +397,7 @@ class Experiment_dfVmap(python_nano.python_Nanonis_TCP): # define child class fo
         
         masks = None
         xGrid = np.zeros(50)
-        yGrid = np.arrange(0, 2e-9, 20)
+        yGrid = np.arange(0, 2e-9, 20)
 
         return xGrid, yGrid, masks
     
@@ -594,6 +594,7 @@ class Experiment_dfVmap(python_nano.python_Nanonis_TCP): # define child class fo
         ax.scatter(self.xt, self.yt, marker="P")
         
         if self.masks is None: 
+            print(len(self.x), len(self.y))
             ax.scatter(self.x, self.y)
         else:
             ax.scatter(self.x, self.y, c=np.array(self.masks), marker="s",

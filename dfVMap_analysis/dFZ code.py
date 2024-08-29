@@ -137,7 +137,7 @@ class Spectrum(output_data_spectra_dat):
             return axFit, axResiduals, axDataMinusFit
 
 
-path = r"C:\Users\Fwkca\OneDrive\Desktop\PhD Data\Nikhil visit BP\Spatial 13 - dFZ" # Path to the folder containing the .dat files
+path = r"C:\Users\Fwkca\OneDrive\Desktop\PhD Data\Nikhil visit BP\Spatial 10 - dFZ" # Path to the folder containing the .dat files
 
 # Get a list of all .dat files in the specified folder
 file_list = [f for f in os.listdir(path) if f.endswith('.dat')]
@@ -158,7 +158,7 @@ numbers = []
 file_beginning = "Z-Spectroscopy_BP_" # The beginning of the file name
 
 # file_list = file_list[0:3]
-on_atom_file = "00400"
+on_atom_file = "00184"
 # files = [
 #         ["00015","00016","00017"],
 #         ["00018","00019","00020"], #Sets of files with reference in the middle Spatial 7 Up
@@ -200,13 +200,16 @@ on_atom_file = "00400"
 
 #spatital 10 reference: 00184
 #UD1
+files = ["00186","00187","00189","00191","00193","00195","00197","00203","00201","00204","00188","00190","00192","00194","00196","00198","00200","00202","00205",] #up -> down
 # files = ["00186","00187","00189","00191","00193","00195","00197","00203","00201","00204",] #up
 # files = ["00188","00190","00192","00194","00196","00198","00200","00202","00205",] #down
 #LR
+# files = ["00208","00209","00211","00213","00215","00217","00219","00221","00223","00225","00210","00212","00214","00216","00218","00220","00222","00224","00226",] #left -> right
 # files = ["00208","00209","00211","00213","00215","00217","00219","00221","00223","00225",] #left
 # files = ["00210","00212","00214","00216","00218","00220","00222","00224","00226",] #right
 
 # UD2 ref: 00184
+# files = ["00230","00232","00234","00236","00238","00241","00244","00246","00248","00228","00229","00231","00233","00235","00237","00240","00243","00245","00247"] #up -> down
 # files = ["00230","00232","00234","00236","00238","00241","00244","00246","00248",] #down
 # files = ["00228","00229","00231","00233","00235","00237","00240","00243","00245","00247",] #up
 
@@ -229,7 +232,7 @@ on_atom_file = "00400"
 
 #spatitial 13 UD (401-422) reference: 00400
 # files = ["00401","00403","00405","00407","00409","00411","00413","00415","00417","00419","00421"] #Up
-files = ["00404","00406","00408","00410","00412","00414","00416","00418","00420","00422"] #Down
+# files = ["00404","00406","00408","00410","00412","00414","00416","00418","00420","00422"] #Down
 
 # spatital 13 LR (423-441) reference: 00400
 # files = ["00423", "00425","00427","00429","00431","00433","00435","00437","00441"] #Left
@@ -239,7 +242,7 @@ files = ["00404","00406","00408","00410","00412","00414","00416","00418","00420"
 
 # type = "aba" # reference after every scan
 type = "ab" # reference at start 
-fit_number = 30
+fit_number = 120
 z_rels = []
 dfs = []
 all_dfs = []
@@ -256,6 +259,9 @@ integral_errs = []
 
 def gaussian(x, a, x0, sigma):
     return a * np.exp(-(x - x0) ** 2 / (2 * sigma ** 2))
+
+# def func(x, a, x0, sigma): 
+#     return a * np.exp(-(x - x0) ** 2/(2*sigma**2))
 
 def lorentzian(x, x0, a, gamma):
             return a * gamma**2 / ((x - x0)**2 + gamma**2)
@@ -317,21 +323,26 @@ def fit_and_plot(x_curve, y_curve, ax,exclusion_list, number, label, color,fit_n
     # print("X data: ", x_data)
         # axMinus.plot(x_data, y_data, 'ro', label="Data")
 
+    print("offset: ", offset)
     if offset is not None:
     # Add an offset to the data
         # offset = abs(min(y_data)) + offset # Ensure all y_data values are positive
-        offset = 0.1
+        offset = 0
         print("Offset: ", offset)
         y_data = y_data + offset
         # print("Y data: ", y_data)
+    ax.plot(x_data, y_data, 'ro',alpha = 0.45, label="Data")
+
 
     initial_guess = [peak_z, max(y_data) - 0.1, 1]
-    initial_guess_1 = [1, np.mean(x_data), np.std(x_data)]
-    # print("Initial guess: ", initial_guess_1)
+    initial_guess_1 = [0.1, np.mean(x_data), np.std(x_data)]
+
+    # ax.plot(x_data, gaussian(x_data, *initial_guess_1), 'k-', label="Initial guess")
+    print("Initial guess: ", initial_guess_1)
     # print("X data: ", x_data)
     # print("Y data: ", y_data)
     try:
-        popt, pcov = curve_fit(gaussian, x_data, y_data, p0=initial_guess_1, maxfev=10000)
+        popt, pcov = curve_fit(gaussian, x_data, y_data,p0=initial_guess_1, maxfev=10000)
         # print("Popt: ", popt)
         x0, a, gamma = popt
         height = a * 1E10
@@ -417,7 +428,7 @@ if type == "aba":
                 axMinusData.plot(z_rels[0], np.convolve(minus_1, np.ones(5)/5, mode='same'), label="Smoothed 0-1")
                 axMinusData.plot(z_rels[0], np.convolve(minus_2, np.ones(5)/5, mode='same'), label="Smoothed 2-1")
                 print("len z_rel: ", len(z_rel), " len minus_1: ", len(minus_1))
-                x0, height, fwhm, error_x0, error_a, error_fwhm, integral, error = fit_and_plot(z_rel, minus_1, axMinusData, ["00288","00294"], number, "0-1", "r",fit_no=fit_number, offset=0.1)
+                x0, height, fwhm, error_x0, error_a, error_fwhm, integral, error = fit_and_plot(z_rel, minus_1, axMinusData, ["00288","00294"], number, "0-1", "r",fit_no=fit_number, offset=None)
 
                 axMinusData.legend()
 
@@ -460,7 +471,7 @@ if type == "ab":
     atom_df = atom_spectrum.y
     atom_z_rel = atom_spectrum.x
     
-    offset = 1
+    offset = 0
 
     # print(atom_df)
 
@@ -478,29 +489,46 @@ if type == "ab":
         z_rels.append(z_rel)
         dfs.append(df)
         numbers.append(number)
+        atom_poly_coeffs = np.polyfit(atom_z_rel, atom_df, 8)
+
+                # Subtract the polynomial curve from df
+        atom_poly = np.polyval(atom_poly_coeffs, z_rel)
+
 
         smoothed_df = np.convolve(df, np.ones(5)/5, mode='same')
         smoothed_atom_df = np.convolve(atom_df, np.ones(5)/5, mode='same')
+        smoothed_atom_poly = np.convolve(atom_poly, np.ones(5)/5, mode='same')
+#fit a polynomial to atom_df
+        
 
         axData.plot(z_rel, df, label=file_name)
         axData.plot(atom_z_rel, atom_df, label=on_atom_file_name)
+        # axData.plot(atom_poly,atom_df, label=on_atom_file_name+ " polynomial")
         
         # axSmooth.plot(z_rel, smoothed_df, label=file_name)
         # axSmooth.plot(atom_z_rel, smoothed_atom_df, label=on_atom_file_name)
 
 
+        
+        old_Minus_curve = -(df - atom_df)
         Minus_curve = -(df - atom_df)
+        # Minus_curve = -(df - atom_poly)
         # smoothed_minus = np.convolve(Minus_curve, np.ones(5)/5, mode='same')
         print("Lengths: ", len(z_rel), len(Minus_curve), len(df), len(atom_df))
         # print(len(z_rel), len(Minus_curve))
-        axMinus.plot(z_rel, Minus_curve, label=number)
+        axMinus.plot(z_rel, Minus_curve, label="Minus with Poly")
+        axMinus.plot(z_rel,old_Minus_curve,alpha=00.75, label = "Minus without Poly")
         # axMinus.plot(z_rel, smoothed_minus, label="Smoothed")
 
         smoothed_minus = -(smoothed_df - smoothed_atom_df)
-        axSmoothMinus.plot(z_rel, smoothed_minus, label=number)
+        smoothed_minus_poly = -(smoothed_df - smoothed_atom_poly)
+        axSmoothMinus.plot(z_rel, smoothed_minus, label="Smoothed raw")
+        axSmoothMinus.plot(z_rel, smoothed_minus_poly, alpha=00.75, label = "Smoothed Poly")
+
         # only find peaks in the first half of the data 
 
         x0, height, fwhm, error_x0, error_a, error_fwhm, integral, error = fit_and_plot(z_rel, Minus_curve, axSmoothMinus, ["00119","00111","00112",], number, "0-1", "b", fit_no=fit_number, offset=offset)
+        # x0, height, fwhm, error_x0, error_a, error_fwhm, integral, error = fit_and_plot(z_rel, smoothed_minus_poly, axSmoothMinus, ["00119","00111","00112",], number, "0-1", "b", fit_no=fit_number, offset=offset)
 
         As.append(height)
         FWHMS.append(fwhm)
@@ -550,7 +578,7 @@ plt.title(f"Z-Spectroscopy BP All")
 plt.xlabel('Relative Z (m)')
 plt.ylabel('Frequency Shift (Hz)')
 plt.legend()
-plt.show()
+# plt.show()
 print("Numbers: ", numbers_end)
 print("As: ", As)
 print("Errors on As: ", As_err)

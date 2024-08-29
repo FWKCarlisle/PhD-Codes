@@ -10,6 +10,7 @@ from scipy.signal import find_peaks
 from scipy.integrate import quad
 from matplotlib.ticker import ScalarFormatter, MultipleLocator
 from datetime import datetime
+import time
 
 
 class Spectrum(output_data_spectra_dat):
@@ -138,7 +139,8 @@ class Spectrum(output_data_spectra_dat):
             return axFit, axResiduals, axDataMinusFit
 
 
-path = r"C:\Users\Fwkca\OneDrive\Desktop\PhD Data\Nikhil visit BP\Spatial 12 - dFZ" # Path to the folder containing the .dat files
+# path = r"C:\Users\Fwkca\OneDrive\Desktop\PhD Data\Nikhil visit BP\Spatial 12 - dFZ" # Path to the folder containing the .dat files
+path = r"C:\Users\Fwkca\OneDrive\Desktop\PhD Data\Nikhil visit BP\BPA1" # Path to the folder containing the .dat files
 
 # Get a list of all .dat files in the specified folder
 file_list = [f for f in os.listdir(path) if f.endswith('.dat')]
@@ -156,10 +158,11 @@ biases = []
 numbers = []
 
 
-file_beginning = "Z-Spectroscopy_BP_" # The beginning of the file name
+file_beginning_atom = "Z-Spectroscopy_BP_" # The beginning of the file name
+file_beginning = "dfzMap_BPA1_"
 
 # file_list = file_list[0:3]
-on_atom_file = "00349"
+on_atom_file = "00546"
 # files = [
 #         ["00015","00016","00017"],
 #         ["00018","00019","00020"], #Sets of files with reference in the middle Spatial 7 Up
@@ -225,10 +228,11 @@ on_atom_file = "00349"
 
 #spatial 12 Left reference: 00349
 # LR
-files = ["00350","00352","00354","00356","00358","00360","00362","00364","00366","00368","00351","00353","00355","00357","00359","00361","00363","00365","00367",] # 27.08 left - right
+# files = ["00350","00352","00354","00356","00358","00360","00362","00364","00366","00368","00351","00353","00355","00357","00359","00361","00363","00365","00367",] # 27.08 left - right
 # files = ["00350","00352","00354","00356","00358","00360","00362","00364","00366","00368",] # 27.08 left
 # files = ["00351","00353","00355","00357","00359","00361","00363","00365","00367",] # 27.08 right
 # UD 
+files = ["00370","00372","00374","00376","00378","00380","00382","00384","00386","00369","00371","00373","00375","00377","00379","00381","00383","00385","00387",] # 27.08 up - down
 # files = ["00370","00372","00374","00376","00378","00380","00382","00384","00386"] #up
 # files = ["00369","00371","00373","00375","00377","00379","00381","00383","00385","00387",] #down
 
@@ -241,6 +245,9 @@ files = ["00350","00352","00354","00356","00358","00360","00362","00364","00366"
 # files = ["00424", "00426","00428","00430","00432","00434","00436","00438","00440"] #Right
 # files = ["00426","00428","00430","00432","00434","00436","00438","00440"] #Right #REMOVED 00424
 
+# BPA1ref (00001-00042) ref: 00546 
+# files = ["00001","00002","00003","00004","00005","00006","00007","00008","00009","00010","00011","00012","00013","00014","00015","00016","00017","00018","00019","00020","00021"] #LR
+files = ["00022", "00023", "00024", "00025", "00026", "00027", "00028", "00029", "00030", "00031", "00032", "00033", "00034", "00035", "00036", "00037", "00038", "00039", "00040", "00041" ] #UD
 
 # type = "aba" # reference after every scan
 type = "ab" # reference at start 
@@ -329,11 +336,13 @@ def fit_and_plot(x_curve, y_curve, ax,exclusion_list, number, label, color,fit_n
     if offset is not None:
     # Add an offset to the data
         # offset = abs(min(y_data)) + offset # Ensure all y_data values are positive
-        offset = 0
+        #find mean of y curve without peak region
+        y_curve = y_curve[:start] + y_curve[end:]
+        offset = 0.07
         print("Offset: ", offset)
         y_data = y_data + offset
         # print("Y data: ", y_data)
-    ax.plot(x_data, y_data, 'ro',alpha = 0.45, label="Data")
+    ax.plot(x_data, y_data-offset, 'ro',alpha = 0.45, label="Data")
 
 
     initial_guess = [peak_z, max(y_data) - 0.1, 1]
@@ -468,7 +477,7 @@ if type == "aba":
 
 if type == "ab":
     
-    on_atom_file_name = file_beginning+on_atom_file + ".dat"
+    on_atom_file_name = file_beginning_atom + on_atom_file + ".dat"
     atom_spectrum = Spectrum(path=path, fileName=on_atom_file_name, channel='OC M1 Freq. Shift (Hz)')
     atom_df = atom_spectrum.y
     atom_z_rel = atom_spectrum.x
@@ -569,6 +578,10 @@ if type == "ab":
 
 
         plt.show()
+
+        # time.sleep(5)
+
+        # plt.close()
         
     plt.clf()
     for i in range(len(dfs)):

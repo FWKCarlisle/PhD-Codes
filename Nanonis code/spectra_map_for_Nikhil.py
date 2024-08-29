@@ -295,8 +295,9 @@ class Experiment_dfVmap(python_nano.python_Nanonis_TCP): # define child class fo
         
         scanWidth = gridWidth + (0.25 * gridWidth)
         
+        scanWidth = 7e-9
         
-        self.TestStatus(xScanCentre, yScanCentre, scanWidth, pxPerLine=512)
+        self.TestStatus(xScanCentre, yScanCentre, scanWidth, pxPerLine=64)
      
         # =====================================================================
         
@@ -313,8 +314,10 @@ class Experiment_dfVmap(python_nano.python_Nanonis_TCP): # define child class fo
         self.Z_feedback_set('on') # turn z controller on
         print("check z controller is on")
         
+
+
         # test ================================================================
-        self.TestStatus(xScanCentre, yScanCentre, scanWidth, pxPerLine=512)
+        self.TestStatus(xScanCentre, yScanCentre, scanWidth, pxPerLine=64)
      
         # =====================================================================
         

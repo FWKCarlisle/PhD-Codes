@@ -9,6 +9,7 @@ from scipy.optimize import curve_fit
 from scipy.signal import find_peaks
 from scipy.integrate import quad
 from matplotlib.ticker import ScalarFormatter, MultipleLocator
+from datetime import datetime
 
 
 class Spectrum(output_data_spectra_dat):
@@ -137,7 +138,7 @@ class Spectrum(output_data_spectra_dat):
             return axFit, axResiduals, axDataMinusFit
 
 
-path = r"C:\Users\Fwkca\OneDrive\Desktop\PhD Data\Nikhil visit BP\Spatial 10 - dFZ" # Path to the folder containing the .dat files
+path = r"C:\Users\Fwkca\OneDrive\Desktop\PhD Data\Nikhil visit BP\Spatial 12 - dFZ" # Path to the folder containing the .dat files
 
 # Get a list of all .dat files in the specified folder
 file_list = [f for f in os.listdir(path) if f.endswith('.dat')]
@@ -158,7 +159,7 @@ numbers = []
 file_beginning = "Z-Spectroscopy_BP_" # The beginning of the file name
 
 # file_list = file_list[0:3]
-on_atom_file = "00184"
+on_atom_file = "00349"
 # files = [
 #         ["00015","00016","00017"],
 #         ["00018","00019","00020"], #Sets of files with reference in the middle Spatial 7 Up
@@ -200,7 +201,7 @@ on_atom_file = "00184"
 
 #spatital 10 reference: 00184
 #UD1
-files = ["00186","00187","00189","00191","00193","00195","00197","00203","00201","00204","00188","00190","00192","00194","00196","00198","00200","00202","00205",] #up -> down
+# files = ["00186","00187","00189","00191","00193","00195","00197","00203","00201","00204","00188","00190","00192","00194","00196","00198","00200","00202","00205",] #up -> down
 # files = ["00186","00187","00189","00191","00193","00195","00197","00203","00201","00204",] #up
 # files = ["00188","00190","00192","00194","00196","00198","00200","00202","00205",] #down
 #LR
@@ -224,6 +225,7 @@ files = ["00186","00187","00189","00191","00193","00195","00197","00203","00201"
 
 #spatial 12 Left reference: 00349
 # LR
+files = ["00350","00352","00354","00356","00358","00360","00362","00364","00366","00368","00351","00353","00355","00357","00359","00361","00363","00365","00367",] # 27.08 left - right
 # files = ["00350","00352","00354","00356","00358","00360","00362","00364","00366","00368",] # 27.08 left
 # files = ["00351","00353","00355","00357","00359","00361","00363","00365","00367",] # 27.08 right
 # UD 
@@ -242,7 +244,7 @@ files = ["00186","00187","00189","00191","00193","00195","00197","00203","00201"
 
 # type = "aba" # reference after every scan
 type = "ab" # reference at start 
-fit_number = 120
+fit_number = 80
 z_rels = []
 dfs = []
 all_dfs = []
@@ -263,7 +265,7 @@ def gaussian(x, a, x0, sigma):
 # def func(x, a, x0, sigma): 
 #     return a * np.exp(-(x - x0) ** 2/(2*sigma**2))
 
-def lorentzian(x, x0, a, gamma):
+def lorentzian(x, a, x0,  gamma):
             return a * gamma**2 / ((x - x0)**2 + gamma**2)
 
 def fit_gaussian(x, y):
@@ -495,6 +497,7 @@ if type == "ab":
         atom_poly = np.polyval(atom_poly_coeffs, z_rel)
 
 
+
         smoothed_df = np.convolve(df, np.ones(5)/5, mode='same')
         smoothed_atom_df = np.convolve(atom_df, np.ones(5)/5, mode='same')
         smoothed_atom_poly = np.convolve(atom_poly, np.ones(5)/5, mode='same')
@@ -503,7 +506,7 @@ if type == "ab":
 
         axData.plot(z_rel, df, label=file_name)
         axData.plot(atom_z_rel, atom_df, label=on_atom_file_name)
-        # axData.plot(atom_poly,atom_df, label=on_atom_file_name+ " polynomial")
+        axData.plot(atom_z_rel[:25500],atom_poly[:25500], label=on_atom_file_name+ " polynomial")
         
         # axSmooth.plot(z_rel, smoothed_df, label=file_name)
         # axSmooth.plot(atom_z_rel, smoothed_atom_df, label=on_atom_file_name)
@@ -511,8 +514,8 @@ if type == "ab":
 
         
         old_Minus_curve = -(df - atom_df)
-        Minus_curve = -(df - atom_df)
-        # Minus_curve = -(df - atom_poly)
+        # Minus_curve = -(df - atom_df)
+        Minus_curve = -(df - atom_poly)
         # smoothed_minus = np.convolve(Minus_curve, np.ones(5)/5, mode='same')
         print("Lengths: ", len(z_rel), len(Minus_curve), len(df), len(atom_df))
         # print(len(z_rel), len(Minus_curve))
@@ -527,7 +530,7 @@ if type == "ab":
 
         # only find peaks in the first half of the data 
 
-        x0, height, fwhm, error_x0, error_a, error_fwhm, integral, error = fit_and_plot(z_rel, Minus_curve, axSmoothMinus, ["00119","00111","00112",], number, "0-1", "b", fit_no=fit_number, offset=offset)
+        x0, height, fwhm, error_x0, error_a, error_fwhm, integral, error = fit_and_plot(z_rel, Minus_curve, axSmoothMinus, ["00186","00111","00112",], number, "0-1", "b", fit_no=fit_number, offset=offset)
         # x0, height, fwhm, error_x0, error_a, error_fwhm, integral, error = fit_and_plot(z_rel, smoothed_minus_poly, axSmoothMinus, ["00119","00111","00112",], number, "0-1", "b", fit_no=fit_number, offset=offset)
 
         As.append(height)
@@ -588,3 +591,25 @@ print("Centers: ", Centers)
 print("Errors on Centers: ", Centers_err)
 print("Integrals: ", integrals)
 print("Integral Errors: ", integral_errs)
+
+
+now = datetime.now()
+time = now.strftime("%d-%m-%Y %H-%M-%S")
+
+# Save the arrays to a .txt file
+data = {
+    'Notes': f'Fitted parabola on {time} ',
+    'Numbers': numbers_end,
+    'As': As,
+    'Errors on As': As_err,
+    'FWHMS': FWHMS,
+    'Errors on FWHMS': FWHMS_err,
+    'Centers': Centers,
+    'Errors on Centers': Centers_err,
+    'Integrals': integrals,
+    'Integral Errors': integral_errs
+}
+
+with open('Data.txt', 'w') as file:
+    for key, value in data.items():
+        file.write(f'{key}: {value}\n')

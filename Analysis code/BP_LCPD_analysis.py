@@ -211,19 +211,19 @@ import numpy as np
 # peak_YN     = np.array([1     ,1    , 1  , 1    ,1     , 1    , 1    , 0   , 0    , 0    ,1    , 1    , 1    ,0.5  , 0.5    ,1  ,0    ,0    ,0])
 
 #Spatial 10 With fitted polynomial LR
-number      =          [ 864  , 865  , 867 , 869  , 871 , 873 , 875,  877  , 879  ,881   , 866 , 868 ,   870 , 872 , 874  , 876 , 878 , 880 , 882]
-file_number =          ['00186', '00187', '00189', '00191', '00193', '00195', '00197', '00203', '00201', '00204', '00188', '00190', '00192', '00194', '00196', '00198', '00200', '00202', '00205']
-distances   = np.array([0    ,-0.26 ,-0.55, -0.82, -1.07, -1.35, -1.62, -1.88, -2.15, -2.43 ,  0.25,0.53 ,  0.80 ,1.08 ,1.35  ,1.62 ,1.88 ,2.15 , 2.43])
-d_errors    = np.array([0.01  , 0.01 , 0.01 , 0.01 , 0.01 , 0.01 , 0.01 , 0.01 , 0.01 , 0.01 , 0   , 0.01,   0.01, 0.01, 0.01 , 0.01, 0.01,0.01 ,0.01])
-dip_height  = np.array([4.756080818609759, 4.703953392528373, 4.505384875780105, 4.227084398393732, 3.7319055483423726, 2.8991686211672594, 2.0276905133998775, 1.217295053921518, 3.2388997758339486, 2.201288532013385, 4.686720903706324, 4.4434663320330525, 4.051049868612488, 3.4206126740760254, 2.5676211185950004, 1.6446250164931195, 0.7105027415541839, None, 4.482009326519677])
-dip_h_errs  = np.array([0.022158532133136618, 0.023196686976854237, 0.02132388933097667, 0.028636287638225184, 0.03449094840336213, 0.03394680649048602, 0.01740078732735973, 0.021057675536247305, 0.03190551481715214, 0.033938458593218826, 0.020356969330485423, 0.023830150750835725, 0.026536115129525435, 0.025229374176575555, 0.02325222785923084, 0.018277529094695374, 0.022133656736885717, None, 0.06491527450507047])
-dip_width   = np.array([1.5178434944593133, 1.4366014681876411, 1.2626651476024178, 1.2941116763713107, 1.7195014300908165, 1.4688826870914815, 1.3324434300459558, 1.1074582142462936, 0.14530915929439597, 0.11603566576310097, 1.4695165280296072, 1.5054766937190864, 1.6587682793844638, 1.9946593262097057, 2.4788497682224784, 1.9099899473910182, 1.759654255036566, None, 3.1282693621064195])
-dip_w_errs  = np.array([0.052183364185609545, 0.05462820760426104, 0.050217755377601765, 0.06743844930340562, 0.0812263485053732, 0.07994473152463757, 0.0409800219284233, 0.04984136045250592, 0.07513748791378771, 0.07992507659125586, 0.0479406748485723, 0.05612000559106732, 0.06249261046351879, 0.059429251109888705, 0.05534118056695032, 0.04455207657891668, 0.056081954430104365, None, 0.16184465682997692])
-dip_position= np.array([0.11456905529069134, 0.10024157366977583, 0.10471430423203856, 0.08280016905872328, 0.06518707159223275, 0.05563990733103227, 0.08241767768790162, 0.07643605884421184, -0.031273664750679823, 0.023556583194287276, 0.11890272402078644, 0.1153019869441036, 0.11721253701799719, 0.10189346960042601, 0.10668206744095557, 0.13149571728436427, 0.14363771262918001, None, 0.0388907616420893])
-dip_p_errs  = np.array([0.0034109938985629434, 0.0033010169172496277, 0.0036063481571786296, 0.0037372449554273013, 0.0026668126239072624, 0.002622326554517696, 0.0021952423592778102, 0.0029657475833889954, 0.013996149942463407, 0.014035353878272365, 0.0033592793494860557, 0.0037225113269178283, 0.0038241773211175486, 0.002628533109794029, 0.002043070992262217, 0.0025636630411933585, 0.0026469458706869986, None, 0.0016380587080033803])
-Integral    = np.array([1.850926151105908e-11, 1.5327882798965316e-11, 1.4073211538209463e-11, 1.140517103829564e-11, 1.1930083247086398e-11, 8.699012282055916e-12, 1.1686773698897122e-11, 8.96657977589273e-12, -4.823105907827534e-13, 3.047385825860722e-13, 1.859785025968324e-11, 1.847600314190435e-11, 2.069410834571708e-11, 2.1618526154199873e-11, 2.78960519927245e-11, 2.6163393606235857e-11, 2.2306429154663835e-11, None, 1.2494593414914612e-11])
-integral_err= np.array([4.461318004650971e-14, 2.1700159057321783e-13, 5.540176753909695e-12, 2.2235052061672213e-13, 1.4550838081404342e-14, 9.009808133933385e-14, 1.1234475554052477e-13, 7.587492907742054e-15, 7.979169104756283e-13, 5.441140007142656e-13, 3.2724645637920734e-14, 2.483383850970672e-13, 4.2966035436748006e-14, 2.809076145034492e-16, 5.449728573194363e-19, 1.0427896020267536e-17, 1.401467653034017e-19, None, 7.662691912082854e-23])
-peak_YN     = np.array([1,])
+# number      =          [ 864  , 865  , 867 , 869  , 871 , 873 , 875,  877  , 879  ,881   , 866 , 868 ,   870 , 872 , 874  , 876 , 878 , 880 , 882]
+# file_number =          ['00186', '00187', '00189', '00191', '00193', '00195', '00197', '00203', '00201', '00204', '00188', '00190', '00192', '00194', '00196', '00198', '00200', '00202', '00205']
+# distances   = np.array([0    ,-0.26 ,-0.55, -0.82, -1.07, -1.35, -1.62, -1.88, -2.15, -2.43 ,  0.25,0.53 ,  0.80 ,1.08 ,1.35  ,1.62 ,1.88 ,2.15 , 2.43])
+# d_errors    = np.array([0.01  , 0.01 , 0.01 , 0.01 , 0.01 , 0.01 , 0.01 , 0.01 , 0.01 , 0.01 , 0   , 0.01,   0.01, 0.01, 0.01 , 0.01, 0.01,0.01 ,0.01])
+# dip_height  = np.array([4.756159837347067, 4.6708848402819205, 4.478738042612212, 4.1774277961647535, 3.6797205964663706, 2.944844306118239, 2.006309097759592, 1.2185639418135032, 0.39260078690055045, 0.19221433524283205, 4.677011146726874, 4.406042958486689, 4.038153966026918, 3.464347350440314, 2.603967666668654, 1.6400824839332393, 0.6980417423264397, -0.17257280077434284, 4.552884068097465])
+# dip_h_errs  = np.array([0.017208076379123687, 0.023084805350210885, 0.019680109639954885, 0.025329446884202335, 0.02804517945172982, 0.0225168623225333, 0.016967376118985453, 0.018469060714326, 0.022423928264330765, 0.06239394290941143, 0.021730520810443823, 0.024868018757220296, 0.023670690384909744, 0.01770520306478364, 0.01578257792640679, 0.013701522044781598, 0.014261807565570174, 0.10920795591388202, 0.04472394967721335])
+# dip_width   = np.array([1.5113249250494074, 1.4311535192915412, 1.1915474657116756, 1.141260799022402, 1.5638813528239621, 1.3493620280900147, 1.3500237876868075, 1.012310863793873, 1.0890347098145998, 0.773646813775728, 1.5309391720759604, 1.5398849592727293, 1.5881186163711207, 1.81813957751158, 2.434840509555013, 1.970433411203106, 1.856790703381243, -1.9801432374264516, 3.2753394040827435])
+# dip_w_errs  = np.array([0.05832850866424814, 0.07800388271105838, 0.06610144097789826, 0.08499512527356175, 0.09511450645395539, 0.07589863263663989, 0.057984374285274955, 0.06349507061764793, 0.08324760235293827, 0.209652577486429, 0.07364804695520102, 0.08428534831360739, 0.08042084602678015, 0.06062582223241283, 0.05592061570002816, 0.049498518827052196, 0.05452236144691435, 0.1037910819716077, 0.16769076479532805])
+# dip_position= np.array([0.12113195383398338, 0.10412113961087346, 0.11128986228141256, 0.09146689290660587, 0.07256414817489426, 0.06203620120603726, 0.08523402242662194, 0.08371483388019615, 0.049258196174786516, -0.020822469140381, 0.12277901929695141, 0.1204413543934938, 0.12706397012020085, 0.11492686294338637, 0.11543646192258336, 0.1389264574045563, 0.15095239424540619, 0.1003511657395846, 0.04095643553442815])
+# dip_p_errs  = np.array([0.003259058230083584, 0.003967179908795186, 0.004336048131630276, 0.004789154119695882, 0.0030756259792153193, 0.0024435801073541003, 0.0025345919812863565, 0.003615298824910918, 0.002067087475098995, 0.002805853814548593, 0.004118022201270377, 0.00459583383539394, 0.0044766562822420065, 0.002649367116436146, 0.0017789227303097181, 0.002292973024803551, 0.002406533310632115, 0.008738014732064517, 0.001336119786601028])
+# Integral    = np.array([1.948527664864093e-11, 1.5860726761464696e-11, 1.411451555592271e-11, 1.1110864597049548e-11, 1.2078731708167486e-11, 8.909895432406126e-12, 1.2244797882343518e-11, 8.999503308765578e-12, 4.579558335670181e-12, -1.2358494704390133e-12, 2.0006752823317918e-11, 1.9740565999361864e-11, 2.147766939032031e-11, 2.2236890438399734e-11, 2.971262024503931e-11, 2.8406055441691767e-11, 2.421696621243434e-11, 8.854659712659408e-12, 1.3809486521260385e-11])
+# integral_err= np.array([8.339217102836843e-14, 1.7232059069868923e-13, 1.1982656966508636e-11, 1.402244404940256e-11, 9.063637536141947e-14, 1.1231736217298229e-12, 5.849612229812702e-15, 9.499628770187328e-14, 1.2099662337001113e-17, 1.1781355470079218e-13, 6.32235482550138e-14, 1.443016782338944e-13, 1.085325453532154e-14, 3.502368917247597e-15, 1.4044413126947702e-19, 4.2855412393763874e-18, 1.6555552378862655e-21, 1.1388542966598659e-23, 1.5714716597272221e-21])
+# peak_YN     = np.array([1,1,1,1,1,1,1,1,0.5,0,1,1,1,1,1,1,1,0,0])
 
 # #Spatial 10 With fitted polynomial UD2
 # number      =          [ 864  , 865  , 867 , 869  , 871 , 873 , 875,  877  , 879  ,881   , 866 , 868 ,   870 , 872 , 874  , 876 , 878 , 880 , 882]
@@ -367,105 +367,134 @@ peak_YN     = np.array([1,])
 # peak_YN     = np.array([])
 
 
-def calculate_best_fit_line(x, y):
-    slope, intercept = np.polyfit(x, y, 1)
-    best_fit = slope*x + intercept
 
-    coefficients = np.polyfit(x, y, 2)  # 2 indicates a quadratic fit
-    parabola = np.polyval(coefficients, x)
-    return parabola
+#Spatial 10 LR ref: 400
+# distances   = np.array([0    ,-0.26 ,-0.55, -0.82, -1.07, -1.35, -1.62, -1.88, -2.15, -2.43 ,  0.25,0.53 ,  0.80 ,1.08 ,1.35  ,1.62 ,1.88 ,2.15 , 2.43])
+# d_errors    = np.array([0.01  , 0.01 , 0.01 , 0.01 , 0.01 , 0.01 , 0.01 , 0.01 , 0.01 , 0.01 , 0   , 0.01,   0.01, 0.01, 0.01 , 0.01, 0.01,0.01 ,0.01])
+# peak_YN     = np.array([1,1,1,1,1,1,1,0.5,0,0,1,1,1,1,1,1,0,0,0,])
+# UD1
+# distances   = np.array([  0    ,-0.25 , -0.50, -0.75, -0.99, -1.24, -1.48, -1.73, -1.95, -2.16 ,0.25  , 0.47, 0.74, 0.98, 1.24,1.48 , 1.72, 2.18  ])
+# d_errors    = np.array([ 0.01  , 0.01 , 0.01 , 0.01 , 0.01 , 0.01 , 0.01 , 0.01 , 0.01 , 0.01 , 0    , 0.01, 0.01, 0.01, 0.01, 0.01, 0.01,0.01])
+# Peak_YN     = np.array([])
+#UD2
+distances   = np.array([0,-0.25,-0.50,-0.76,-0.98,-1.24,-1.48,-1.74,-1.97,-2.22,0.22,0.46,0.74,0.97,1.24,1.71,1.96,2.22])
+d_errors    = np.array([0.01  , 0.01 , 0.01 , 0.01 , 0.01 , 0.01 , 0.01 , 0.01 , 0.01 , 0.01 , 0   , 0.01,   0.01, 0.01, 0.01 , 0.01, 0.01,0.01 ,0.01])
+peak_YN    = np.array([1,1,1,1,1,1,1,0,0,1,1,1,1,1,1,0,1,0,])
 
-#plot the contact potential against the distance with error bars
+# Open the file
+with open('data.txt', 'r') as file:
+    # Read the contents of the file
+    contents = file.read()
+print(contents.split('\n')[0])
+
+contents = '\n'.join(contents.split('\n')[1:])
+
+data_dict = {}
+# Parse the contents
+for line in contents.split('\n'):
+    if line.strip():  # Skip empty lines
+        key, value = line.split(':', 1)
+        key = key.strip()
+        value = value.strip()
+        # Convert the value to a numpy array if possible
+        try:
+            data_dict[key] = np.array(eval(value))
+        except:
+            data_dict[key] = eval(value)
+print(data_dict)
+# Extract the arrays from the dictionary
+numbers = data_dict.get('Numbers', np.array([]))
+as_values = data_dict.get('As', np.array([]))
+errors_on_as = data_dict.get('Errors on As', np.array([]))
+fwhms = data_dict.get('FWHMS', np.array([]))
+errors_on_fwhms = data_dict.get('Errors on FWHMS', np.array([]))
+centers = data_dict.get('Centers', np.array([]))
+errors_on_centers = data_dict.get('Errors on Centers', np.array([]))
+integrals = data_dict.get('Integrals', np.array([]))
+integral_errors = data_dict.get('Integral Errors', np.array([]))
+
+# Now you can use these arrays in your analysis
+
+print(len(distances),len(peak_YN),len(numbers),len(as_values),len(errors_on_as),len(fwhms),len(errors_on_fwhms),len(centers),len(errors_on_centers),len(integrals),len(integral_errors))
+
+plt.scatter(distances, peak_YN, color='red', label='visable Peak or not')
+plt.show()
 
 
-# best_fit_1 = calculate_best_fit_line(distances_1, Contact_potential_1)
-# best_fit_2 = calculate_best_fit_line(distances_2, Contact_potential_2)
-# best_fit_3 = calculate_best_fit_line(distances_3, Contact_potential_3)
-
-# plt.errorbar(distances_1, Contact_potential_1,xerr=d_errors_1, yerr=CP_errors_1, color='blue', fmt='o')
-# plt.plot(distances_1, best_fit_1, 'r', color='red', label='Best fit line')
-
-# plt.errorbar(distances_2, Contact_potential_2,xerr=d_errors_2, yerr=CP_errors_2, color='red', fmt='o')
-# plt.plot(distances_2, best_fit_2, 'r', color='magenta', label='Best fit line')
-
-# plt.errorbar(distances_3, Contact_potential_3,xerr=d_errors_3, yerr=CP_errors_3, color='green', fmt='o')
-# plt.plot(distances_3, best_fit_3, 'r', color='#2CA02C', label='Best fit line')
-
-# plt.errorbar(distances_4, Contact_potential_4, xerr=0, yerr=CP_errors_4, color='blue', fmt='o', label='Contact potential')
-# plt.errorbar(distances_4, cut_off_potenital_4, xerr=0, yerr=Cutoff_CP_errors_4, color='red', fmt='o', label='Cut off potential')
-# plt.errorbar(distances_5, Contact_potential_5, xerr=d_errors_5, yerr=CP_errors_5, color='blue', fmt='o', label='Contact potential')
-# print(len(distances_5),len(max_residual_5),len(max_bias_5))
-# plt.scatter(distances_5, max_residual_5, color='red', label='Max residual')
-# print(len(distances_5),len(well_depths_5))
-# plt.errorbar(distances_5, well_depths_5,yerr=depth_errors_5, fmt= 'o', color='green', label='Max bias')
-# plt.errorbar(distances_5, well_depths_5, xerr=d_errors_5, yerr=depth_errors_5, color='green', fmt='o', label='Well depth')
+fig, axes = plt.subplots(nrows=2, ncols=2, sharex=True) # Unpack the axes
+(axPosition, axWidth, axDepth, axIntegral) = axes.flatten()
 
 distances_new = []
 d_errors_new = []
-dip_height_new = []
-dip_h_errs_new = []
-dip_position_new = []
-dip_p_errs_new = []
-dip_width_new = []
-dip_w_errs_new = []
+as_values_new = []
+a_errors_new = []
+centers_new = []
+centers_errors_new = []
+fwhms_new = []
+fwhm_errors_new = []
 Integral_new = []
 integral_err_new = []
 numbers_new = []
 peak_YN_new = []
 
-plt.scatter(distances, peak_YN, color='red', label='visable Peak or not')
-plt.show()
-
 for i in range(len(distances)):
     if peak_YN[i] == 1:
-        numbers_new.append(file_number[i])
+        numbers_new.append(numbers[i])
         distances_new.append(distances[i])
-        dip_height_new.append(dip_height[i])
-        dip_position_new.append(dip_position[i])
-        dip_width_new.append(dip_width[i])
-        Integral_new.append(Integral[i])
+        as_values_new.append(as_values[i])
+        centers_new.append(centers[i])
+        fwhms_new.append(fwhms[i])
+        Integral_new.append(integrals[i])
         peak_YN_new.append(peak_YN[i])
 
         d_errors_new.append(d_errors[i])
-        dip_h_errs_new.append(dip_h_errs[i])
-        dip_p_errs_new.append(dip_p_errs[i])
-        dip_w_errs_new.append(dip_w_errs[i])
-        integral_err_new.append(integral_err[i])
+        a_errors_new.append(errors_on_as[i])
+        centers_errors_new.append(errors_on_centers[i])
+        fwhm_errors_new.append(errors_on_fwhms[i])
+        integral_err_new.append(integral_errors[i])
 
 
 
 distances = np.array(distances_new)
-dip_height = np.array(dip_height_new)
-dip_position = np.array(dip_position_new)
-dip_width = np.array(dip_width_new)
+dip_height = np.array(as_values_new)
+dip_position = np.array(centers_new)
+dip_width = np.array(fwhms_new)
 Integral = np.array(Integral_new)
 numbers_new = np.array(numbers_new)
 
 d_errors = np.array(d_errors_new)
-dip_h_errs = np.array(dip_h_errs_new)
-dip_p_errs = np.array(dip_p_errs_new)
-dip_w_errs = np.array(dip_w_errs_new)
+dip_h_errs = np.array(a_errors_new)
+dip_p_errs = np.array(centers_errors_new)
+dip_w_errs = np.array(fwhm_errors_new)
 integral_err = np.array(integral_err_new)
 
 
 ### DF/DZ curves
 
 print(len(distances),len(dip_height),len(dip_position),len(dip_width), len(Integral),len(peak_YN))
-plt.errorbar(distances, dip_height, xerr=d_errors, yerr=dip_h_errs, color= 'blue', fmt='o', label='Dip position')
-# plt.errorbar(distances, dip_width, xerr=d_errors, yerr=dip_w_errs, color= 'orange', fmt='o', label='Dip width')
-# plt.errorbar(distances, dip_position, xerr=d_errors, yerr=dip_p_errs, color= 'green', fmt='o', label='Dip position')
-# plt.errorbar(distances, Integral, xerr=d_errors, yerr=integral_err, color= 'purple', fmt='o', label='Integral')
+
+
+
+axPosition.errorbar(distances, dip_height, xerr=d_errors, yerr=dip_h_errs, color= 'blue', fmt='o', label='Dip position')
+axWidth.errorbar(distances, dip_width, xerr=d_errors, yerr=dip_w_errs, color= 'orange', fmt='o', label='Dip width')
+axDepth.errorbar(distances, dip_position, xerr=d_errors, yerr=dip_p_errs, color= 'green', fmt='o', label='Dip position')
+axIntegral.errorbar(distances, Integral, xerr=d_errors, yerr=integral_err, color= 'purple', fmt='o', label='Integral')
 
 
 
 
 plt.xlabel('Distance (nm)')
-plt.ylabel('Dip position ("Dip height" (nm) ')
-# plt.ylabel('Dip width (FWHM) (nm)')
-# plt.ylabel('Dip width (FWHM) (nm)')
-# plt.ylabel('Dip width (FWHM) (nm)')
+# axPosition.ylabel('Dip position ("Dip height" (nm) ')
+# axWidth.ylabel('Dip width (FWHM) (nm)')
+# axDepth.ylabel('Dip depth (Hz)')
+# axIntegral.ylabel('Integral under Curve')
 
 # plt.xlim(-155,155)
+
+axPosition.legend()
+axWidth.legend()
+axDepth.legend()
+axIntegral.legend()
 plt.legend()
 plt.title('dF/dZ Curve analysis graphs')
 plt.show()

@@ -139,8 +139,8 @@ class Spectrum(output_data_spectra_dat):
             return axFit, axResiduals, axDataMinusFit
 
 
-# path = r"C:\Users\Fwkca\OneDrive\Desktop\PhD Data\Nikhil visit BP\Spatial 10 - dFZ" # Path to the folder containing the .dat files
-path = r"C:\Users\Fwkca\OneDrive\Desktop\PhD Data\Nikhil visit BP\BPA3" # Path to the folder containing the .dat files
+path = r"C:\Users\Fwkca\OneDrive\Desktop\PhD Data\Nikhil visit BP\Spatial 10 - dFZ" # Path to the folder containing the .dat files
+# path = r"C:\Users\Fwkca\OneDrive\Desktop\PhD Data\Nikhil visit BP\BPA1" # Path to the folder containing the .dat files
 
 # Get a list of all .dat files in the specified folder
 file_list = [f for f in os.listdir(path) if f.endswith('.dat')]
@@ -158,50 +158,13 @@ biases = []
 numbers = []
 
 
-# file_beginning_atom = "Z-Spectroscopy_BP_" # The beginning of the file name
-# file_beginning = "Z-Spectroscopy_BP_"
-file_beginning_atom = "dfzMap_BPA3_"
-file_beginning = "dfzMap_BPA3_"
+file_beginning_atom = "Z-Spectroscopy_BP_" # The beginning of the file name
+file_beginning = "Z-Spectroscopy_BP_"
+# file_beginning_atom = "dfzMap_BPA1_"
+# file_beginning = "dfzMap_BPA1_"
 
 # file_list = file_list[0:3]
-on_atom_file = "00002"
-# files = [
-#         ["00015","00016","00017"],
-#         ["00018","00019","00020"], #Sets of files with reference in the middle Spatial 7 Up
-#         ["00021","00022","00023"],
-#         ["00024","00025","00026"],
-#         ["00027","00028","00029"]]
-# files = [
-#         ["00030","00031","00032"],
-#         ["00033","00034","00035"], #Sets of files with reference in the middle # Spatial 7 Down 
-#         ["00036","00037","00038"],
-#         ["00039","00040","00041"],
-#         ["00042","00043","00044"]]
-
-# files = [
-#         ["00030","00009","00032"],
-#         ["00033","00009","00035"], #Sets of files with reference in the middle # Spatial 7 Down With 0009 as reference
-#         ["00036","00009","00038"],
-#         ["00039","00009","00041"],
-#         ["00042","00009","00044"],
-#         ["00015","00009","00017"],
-#         ["00018","00009","00020"], #Sets of files with reference in the middle Spatial 7 Up With 0009 as reference
-#         ["00021","00009","00023"],
-#         ["00024","00009","00026"],
-#         ["00027","00009","00029"]]
-
-# spatital 7 reference: 00009
-# files = ["00047","00048","00049","00051","00052","00053","00055","00056","00057","00061","00058"] #left -> right
-# files = ["00047","00048","00049","00051","00052","00053"] #Sets of files numbers to be plotted ~Spatial 7 Left
-# files = ["00055","00056","00057","00061","00058"] #Sets of files numbers to be plotted ~Spatial 7 Right
-
-
-
-
-#spatial 9 data UD Reference: 00106
-# files = ["00119","00111","00112","00113","00114","00115","00116","00117","00118"]
-#LR
-# files = ["00131","00120","00121","00122","00123","00124","00125","00126","00127","00128","00129","00130",]
+on_atom_file = "00184"
 
 #spatital 10 reference: 00184
 #UD1
@@ -214,60 +177,25 @@ on_atom_file = "00002"
 # files = ["00210","00212","00214","00216","00218","00220","00222","00224","00226",] #right
 
 # UD2 ref: 00184
-files = ["00230","00232","00234","00236","00238","00241","00244","00246","00248","00228","00229","00231","00233","00235","00237","00240","00243","00245","00247"] #up -> down
+files = ["00230","00232","00234","00236","00238","00241","00248","00228","00229","00231","00233","00235","00237","00240","00247"] #up -> down
 # files = ["00230","00232","00234","00236","00238","00241","00244","00246","00248",] #down
 # files = ["00228","00229","00231","00233","00235","00237","00240","00243","00245","00247",] #up
-
-#spatial 11 ref: 00275
-# UD
-# files = ["00284","00285","00287","00289","00291","00294","00296","00298","00300","00302","00286","00288","00290","00293","00295","00297","00299","00301","00303"] #up->down
-# files =  ["00284","00286","00288","00290","00293","00295","00297","00299","00301","00303"] # 27.08 Down
-# files =  ["00287","00289","00291","00294","00296","00298","00300","00302"] # 27.08 Up
-#LR
-# files = ["00304","00306","00308","00318","00321","00324","00326","00305","00307","00317","00319","00323","00325",] #left -> right
-# files = ["00304","00306","00308","00318","00321","00324","00326",] # 27.08 left
-# files = ["00305","00307","00317","00319","00323","00325",] # 27.08 right
-
-
-#spatial 12 Left reference: 00349
-# LR
-# files = ["00350","00352","00354","00356","00358","00360","00362","00364","00366","00368","00351","00353","00355","00357","00359","00361","00363","00365","00367",] # 27.08 left - right
-# files = ["00350","00352","00354","00356","00358","00360","00362","00364","00366","00368",] # 27.08 left
-# files = ["00351","00353","00355","00357","00359","00361","00363","00365","00367",] # 27.08 right
-# UD 
-# files = ["00370","00372","00374","00376","00378","00380","00382","00384","00386","00369","00371","00373","00375","00377","00379","00381","00383","00385","00387",] # 27.08 up - down
-# files = ["00370","00372","00374","00376","00378","00380","00382","00384","00386"] #up
-# files = ["00369","00371","00373","00375","00377","00379","00381","00383","00385","00387",] #down
-
-#spatitial 13 UD (401-422) reference: 00400
-# files = ["00401","00403","00405","00407","00409","00411","00413","00417","00419","00421","00404","00406","00408","00410","00412","00414","00416","00420","00422"]
-# files = ["00401","00403","00405","00407","00409","00411","00413","00415","00417","00419","00421"] #Up
-# files = ["00404","00406","00408","00410","00412","00414","00416","00418","00420","00422"] #Down
-
-# spatital 13 LR (423-441) reference: 00400
-# files = ["00423", "00425","00427","00429","00431","00433","00435","00437","00441","00424", "00426","00428","00430","00432","00434","00436","00438","00440"]
-# files = ["00423", "00425","00427","00429","00431","00433","00435","00437","00441"] #Left
-# files = ["00424", "00426","00428","00430","00432","00434","00436","00438","00440"] #Right
-# files = ["00426","00428","00430","00432","00434","00436","00438","00440"] #Right #REMOVED 00424
 
 # BPA1ref (00001-00042) ref: 00546 
 # files = ["00001","00002","00003","00004","00005","00006","00007","00008","00009","00010","00011","00012","00013","00014","00015","00016","00017","00018","00019","00020","00021"] #LR
 # files = ["00022", "00023", "00024", "00025", "00026", "00027", "00028", "00029", "00030", "00031", "00032", "00033", "00034", "00035", "00036", "00037", "00038", "00039", "00040", "00041" ] #UD
 
 # BPA2 (00001-00041) ref: BP1_45
-# files = ["00001","00002","00003","00004","00005","00006","00007","00008","00009","00010","00011","00012","00013","00014","00015","00016","00017","00018","00019","00020",] #UD
+# files = ["00021","00001","00002","00003","00004","00005","00006","00007","00008","00009","00010","00011","00012","00013","00014","00015","00016","00017","00018","00019","00020",] #UD
 # files = ["00022","00023","00024","00025","00026","00027","00028","00029","00030","00031","00032","00033","00034","00035","00036","00037","00038","00039","00040","00041",] #LR
-# "00021", On atom BPA2
-#BPA3 (00005-00085)ref: 00002
-# files = ["00046", "00047", "00048", "00049", "00050", "00051", "00052", "00053", "00054", "00055", "00056", "00057", "00058", "00059", "00060", "00061", "00062", "00063", "00064", "00065", "00066", "00067", "00068", "00069", "00070", "00071", "00072", "00073", "00074", "00075", "00076", "00077", "00078", "00079", "00080", "00081", "00082", "00083", "00084", "00085"] #Y
-# files = ["00005", "00006", "00007", "00008", "00009", "00010", "00011", "00012", "00013", "00014", "00015", "00016", "00017", "00018", "00019", "00020", "00021", "00022", "00023", "00024", "00025", "00026", "00027", "00028", "00029", "00030", "00031", "00032", "00033", "00034", "00035", "00036", "00037", "00038", "00039", "00040", "00041", "00042", "00043", "00044"] #x
 
 
-
+# TEST
+# files = ["00230","00232","00234","00236","00238","00241","00244","00246","00248","00228","00229","00231",]
 
 # type = "aba" # reference after every scan
 type = "ab" # reference at start 
-fit_number = 50
+fit_number = 90
 z_rels = []
 dfs = []
 all_dfs = []
@@ -306,15 +234,14 @@ def fit_lorentzian(x, y):
 def func(x, a, b, c, offset):
     return a * np.exp(-0.5 * np.power((x-b) / c, 2.0)) + offset
 
-
-def fit_and_plot(x_curve, y_curve, ax,exclusion_list, number, label, color,fit_no = 60, offset=None):
+def find_peak_start_end(x_curve, y_curve, exclusion_list, fit_no = 60):
     peak_index = np.argmax(y_curve)
     peak_z = x_curve[peak_index]
-    if number in exclusion_list or y_curve[peak_index] - y_curve[peak_index-1] > 0.1:
+    if y_curve[peak_index] - y_curve[peak_index-1] > 0.1 or number in exclusion_list:
         exclude_points = 2
             # if the peak is an outlier point, find the next point
         print("Peak is an outlier point")
-        print("Peak next point: ", y_curve[peak_index] - y_curve[peak_index+1])
+        print("Peak next point: ", y_curve[peak_index] - y_curve[peak_index-1])
 
         mask = np.ones(len(y_curve), dtype=bool)
         start_exclude = max(0, peak_index - exclude_points)
@@ -343,12 +270,13 @@ def fit_and_plot(x_curve, y_curve, ax,exclusion_list, number, label, color,fit_n
     fit_range = fit_no  # Number of points to include around the peak
     start = max(0, peak_index - fit_range)
     end = min(len(x_curve), peak_index + fit_range)
-    print("Start: ", start, " End: ", end)#
-    
-    Smooth_y = np.convolve(y_curve, np.ones(5)/5, mode='same')
-    # print("Peak index: ", Smooth_y)
-    x_data = x_curve[start:end]
-    y_data = Smooth_y[start:end]
+    print("Start: ", start, " End: ", end)
+    return start, end
+
+
+def plot_fit(start, end, x, y, ax, color, label, offset=None):
+    x_data = x[start:end]
+    y_data = y[start:end]
     # print("X data: ", x_data)
         # axMinus.plot(x_data, y_data, 'ro', label="Data")
 
@@ -361,23 +289,20 @@ def fit_and_plot(x_curve, y_curve, ax,exclusion_list, number, label, color,fit_n
     # Add an offset to the data
         # offset = abs(min(y_data)) + offset # Ensure all y_data values are positive
         #find mean of y curve without peak region
-        y_curve = y_curve[:start] + y_curve[end:]
-        offset = 0.07
+        offset = 0.025
         print("Offset: ", offset)
         y_data = y_data + offset
         # print("Y data: ", y_data)
-        ax.plot(x_data, y_data-offset, 'ro',alpha = 0.45, label="Data")
+        axPeak.plot(x_data, y_data-offset, 'ro',alpha = 0.45, label="Data")
 
-
-    initial_guess = [peak_z, max(y_data) - 0.1, 1]
-    initial_guess_1 = [0.1, np.mean(x_data), np.std(x_data)]
+    initial_guess = [0.1, np.mean(x_data), np.std(x_data)]
 
     # ax.plot(x_data, gaussian(x_data, *initial_guess_1), 'k-', label="Initial guess")
-    print("Initial guess: ", initial_guess_1)
+    print("Initial guess: ", initial_guess)
     # print("X data: ", x_data)
     # print("Y data: ", y_data)
     try:
-        popt, pcov = curve_fit(gaussian, x_data, y_data,p0=initial_guess_1, maxfev=10000)
+        popt, pcov = curve_fit(gaussian, x_data, y_data,p0=initial_guess, maxfev=10000)
         # print("Popt: ", popt)
         x0, a, gamma = popt
         height = a * 1E10
@@ -401,28 +326,14 @@ def fit_and_plot(x_curve, y_curve, ax,exclusion_list, number, label, color,fit_n
         y_fit = gaussian(x_fit, *popt)
         # print("Y fit: ", y_fit)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
         if offset is None:
-            ax.plot(x_fit, y_fit, 'b-', label=f'Gaussian fit\nHigh Point: {height:.3f}\nFWHM: {fwhm:.3f}\nCenter: {x0:.3f}')
+            ax.plot(x_fit, y_fit, 'b-', color=color, label=f'Gaussian fit\nHigh Point: {height:.3f}\nFWHM: {fwhm:.3f}\nCenter: {x0:.3f}')
         else:
-            ax.plot(x_fit, y_fit-offset, 'b-', label=f'Gaussian fit\nHigh Point: {height:.3f}\nFWHM: {fwhm:.3f}\nCenter: {x0:.3f}')
+            ax.plot(x_fit, y_fit-offset, 'b-', color=color, label=f'Gaussian fit\nHigh Point: {height:.3f}\nFWHM: {fwhm:.3f}\nCenter: {x0:.3f}')
             y_fit = y_fit - offset
 
 
         integral, error = integrate_gaussian(popt, min(x_data), max(x_data))
-
         return x0, height, fwhm, error_x0, error_a, error_fwhm, integral, error, x_fit, y_fit
     except RuntimeError as e:
         print(f"Error in curve fitting: {e}")
@@ -431,94 +342,126 @@ def fit_and_plot(x_curve, y_curve, ax,exclusion_list, number, label, color,fit_n
         # print("Popt: ", popt)
         return None, None, None, None, None, None, None, None, 0, 0
 
+def fit_and_plot(x_curve, df, y_curve, axData,axRef,axPeak,exclusion_list, number, label, color,fit_no = 60, offset=None):
+    
+    start_1, end_1 = find_peak_start_end(x_curve, y_curve, exclusion_list, fit_no = fit_no)
+
+    # Find the dip region
+    dip_start = start_1  # Start index of the dip region
+    dip_end = end_1  # End index of the dip region
+
+    axPeak.plot(x_curve[dip_start:dip_end], y_curve[dip_start:dip_end], 'go', alpha=0.15, label="Dip region")
+
+    # Remove the dip region from the x_curve and y_curve
+    x_curve_ND = np.concatenate((x_curve[:dip_start], x_curve[dip_end:]))
+    y_curve_ND = np.concatenate((df[:dip_start], df[dip_end:]))
+
+    # ax.plot(x_curve_ND, y_curve_ND, 'bo', alpha=0.45, label="Data without dip")
+    # Plot the modified curve without the dip
+    axRef.plot(x_curve_ND, y_curve_ND,color="purple" , alpha=0.45, label="Data without dip")
+
+    #fit a polynomial to the curves
+    poly_coeffs = np.polyfit(x_curve_ND, y_curve_ND, 8)
+    poly = np.polyval(poly_coeffs, x_curve)
+    axRef.plot(x_curve, poly, 'k-', label="Polynomial fit")
+    
+    # Subtract the polynomial curve from y_curve
+    y_curve = -(df - poly)
+
+
+    axPeak.plot(x_curve, y_curve,"k-", alpha=0.45, label="Minus Curve")
+    #find peaks in new curve
+    start_2, end_2 = find_peak_start_end(x_curve, y_curve, exclusion_list, fit_no = fit_no)
+
+    x0_1, height_1, fwhm_1, error_x0_1, error_a_1, error_fwhm_1, integral_1, error_1, x_fit_1, y_fit_1 = plot_fit(start_1, end_1, x_curve, y_curve, axPeak, "orange", label, offset=offset)
+    x0_2, height_2, fwhm_2, error_x0_2, error_a_2, error_fwhm_2, integral_2, error_2, x_fit_2, y_fit_2 = plot_fit(start_2, end_2, x_curve, y_curve, axPeak, "blue", label, offset=offset)
+
+    x0 = x0_2
+    height = height_2
+    fwhm = fwhm_2
+    error_x0 = error_x0_2
+    error_a = error_a_2
+    error_fwhm = error_fwhm_2
+    integral = integral_2
+    error = error_2
+    x_fit = x_fit_2
+    y_fit = y_fit_2
+
+    # x_data = x_curve[start_2:end_2]
+    # y_data = Smooth_y[start_2:end_2]
+    # # print("X data: ", x_data)
+    #     # axMinus.plot(x_data, y_data, 'ro', label="Data")
+
+
+
+
+
+    # print("offset: ", offset)
+    # if offset is not None:
+    # # Add an offset to the data
+    #     # offset = abs(min(y_data)) + offset # Ensure all y_data values are positive
+    #     #find mean of y curve without peak region
+    #     y_curve = y_curve[:start_2] + y_curve[end_2:]
+    #     offset = 0
+    #     print("Offset: ", offset)
+    #     y_data = y_data + offset
+    #     # print("Y data: ", y_data)
+    #     axPeak.plot(x_data, y_data-offset, 'ro',alpha = 0.45, label="Data")
+
+    # initial_guess = [0.1, np.mean(x_data), np.std(x_data)]
+
+    # # ax.plot(x_data, gaussian(x_data, *initial_guess_1), 'k-', label="Initial guess")
+    # print("Initial guess: ", initial_guess)
+    # # print("X data: ", x_data)
+    # # print("Y data: ", y_data)
+    # try:
+    #     popt, pcov = curve_fit(gaussian, x_data, y_data,p0=initial_guess, maxfev=10000)
+    #     # print("Popt: ", popt)
+    #     x0, a, gamma = popt
+    #     height = a * 1E10
+    #     gamma = gamma * 1E10
+    #     fwhm = 2.355 * gamma
+
+    #     perr = np.sqrt(np.diag(pcov))
+    #     error_x0, error_a, error_gamma = perr
+    #     error_a = error_a * 1E10
+    #     error_gamma = error_gamma * 1E10
+
+    #     error_fwhm = 2.355 * error_gamma
+
+    #     print(f"Fitted parameters:")
+    #     print(f"Center (x0): {x0} ± {error_x0}")
+    #     print(f"Height (a): {height} ± {error_a}")
+    #     print(f"FWHM: {fwhm} ± {error_fwhm}")
+
+    #     # Plot the fitted Gaussian with offset
+    #     x_fit = np.linspace(min(x_data), max(x_data), 1000)
+    #     y_fit = gaussian(x_fit, *popt)
+    #     # print("Y fit: ", y_fit)
+
+    #     if offset is None:
+    #         axPeak.plot(x_fit, y_fit, 'b-', label=f'Gaussian fit\nHigh Point: {height:.3f}\nFWHM: {fwhm:.3f}\nCenter: {x0:.3f}')
+    #     else:
+    #         axPeak.plot(x_fit, y_fit-offset, 'b-', label=f'Gaussian fit\nHigh Point: {height:.3f}\nFWHM: {fwhm:.3f}\nCenter: {x0:.3f}')
+    #         y_fit = y_fit - offset
+
+
+    #     integral, error = integrate_gaussian(popt, min(x_data), max(x_data))
+
+    #     return x0, height, fwhm, error_x0, error_a, error_fwhm, integral, error, x_fit, y_fit
+    # except RuntimeError as e:
+    #     print(f"Error in curve fitting: {e}")
+    #     # return axFit, axResiduals, axDataMinusFit
+
+    #     # print("Popt: ", popt)
+    #     return None, None, None, None, None, None, None, None, 0, 0
+
+    return x0, height, fwhm, error_x0, error_a, error_fwhm, integral, error, x_fit, y_fit
+
 def integrate_gaussian(params, x_min, x_max):
         a, x0, sigma = params
         integral, error = quad(lambda x: gaussian(x, a, x0, sigma), x_min, x_max)
         return integral, error        
-
-if type == "aba":
-    count = 0
-    file_packet = 0
-    for file_packets in files:
-        fig, [axData, axMinus, axMinusData] = plt.subplots(nrows=3, ncols=1, sharex=True) 
-        print("A " , file_packets)
-        for number in file_packets:
-            print("B ", number)
-            
-            file_name = file_beginning+number + ".dat"    
-            print(file_name)
-            # Create a Spectrum instance for each file
-            # example_spectrum = Spectrum(path=path, fileName=file_name, channel='OC M1 Freq. Shift [AVG] (Hz)')
-            example_spectrum = Spectrum(path=path, fileName=file_name, channel='OC M1 Freq. Shift (Hz)')
-        
-            # Get the x and y data for the specified channel
-
-            z_rel = example_spectrum.x
-            df = example_spectrum.y
-            if count == 1:
-                axData.plot(z_rel, df, label=file_name)
-                ref_f = df
-            else:
-                axData.plot(z_rel, df, label=file_name)
-            z_rels.append(z_rel)
-            dfs.append(df)
-            numbers.append(number)
-            
-            count += 1
-            
-            
-            if count == 3:
-                all_dfs.append(dfs)
-                all_zs.append(z_rels)
-                print("Count -", count, " file_packet - ", file_packet, " Z_rels ", len(z_rels), " dfs ", len(dfs))
-                minus_1 = -(dfs[0] - dfs[1])
-                minus_2 = -(dfs[2] - dfs[1])
-                axMinus.plot(z_rels[0], minus_1, label="0-1")
-                axMinus.plot(z_rels[0], minus_2, label="2-1")
-                #plot a 0 line for reference
-                axMinus.plot(z_rels[0], np.zeros(len(z_rels[0])), 'k--')
-                axMinus.legend()
-
-                axMinusData.plot(z_rels[0], np.convolve(minus_1, np.ones(5)/5, mode='same'), label="Smoothed 0-1")
-                axMinusData.plot(z_rels[0], np.convolve(minus_2, np.ones(5)/5, mode='same'), label="Smoothed 2-1")
-                print("len z_rel: ", len(z_rel), " len minus_1: ", len(minus_1))
-                x0, height, fwhm, error_x0, error_a, error_fwhm, integral, error, x_fit, y_fit = fit_and_plot(z_rel, minus_1, axMinusData, ["00288","00294"], number, "0-1", "r",fit_no=fit_number, offset=None)
-
-                axMinusData.legend()
-
-                As.append(height)
-                FWHMS.append(fwhm)
-                Centers.append(x0)
-                As_err.append(error_a)
-                Centers_err.append(error_x0)
-                FWHMS_err.append(error_fwhm)
-                numbers_end.append(number)
-                integrals.append(integral)
-                integral_errs.append(error)
-                x_fits.append(x_fit)
-                y_fits.append(y_fit)
-
-
-                plt.title(f"Z-Spectroscopy BP {file_packet} {numbers[0]}-{numbers[1]}-{numbers[2]}") 
-                plt.xlabel('Relative Z (m)')
-                plt.ylabel('Frequency Shift (Hz)')
-                axData.legend()
-                plt.show()
-                # print("Count -", count, " ", len(z_rels), " ", len(dfs)) 
-                file_packet += 1
-                count = 0
-                z_rels = []
-                dfs = []
-                numbers = []
-                if len(z_rels) == 0 and len(dfs) == 0:
-                    print("Empty arrays")
-                    
-    fig, axData = plt.subplots()
-    for i in range(len(all_dfs)):
-        for j in range(len(all_dfs[i])):
-            axData.plot(all_zs[i][j], all_dfs[i][j] + i/4, label=files[i][j])
-    count = 0    
-
 
 if type == "ab":
     
@@ -532,7 +475,7 @@ if type == "ab":
     # print(atom_df)
 
     for number in files:
-        fig, [axData, axMinus,axSmoothMinus] = plt.subplots(nrows=3, ncols=1, sharex=True)
+        fig, [axData, axRef,axPeak] = plt.subplots(nrows=3, ncols=1, sharex=True)
 
         file_name = file_beginning+number + ".dat"    
         print(file_name)
@@ -558,9 +501,9 @@ if type == "ab":
 #fit a polynomial to atom_df
         
 
-        axData.plot(z_rel, df, label=file_name)
-        axData.plot(atom_z_rel, atom_df, label=on_atom_file_name)
-        axData.plot(atom_z_rel[:25500],atom_poly[:25500], label=on_atom_file_name+ " polynomial")
+        axRef.plot(z_rel, df, label=file_name)
+        axRef.plot(atom_z_rel, atom_df, label=on_atom_file_name)
+        axRef.plot(atom_z_rel[:25500],atom_poly[:25500], label=on_atom_file_name+ " polynomial")
         
         # axSmooth.plot(z_rel, smoothed_df, label=file_name)
         # axSmooth.plot(atom_z_rel, smoothed_atom_df, label=on_atom_file_name)
@@ -573,18 +516,18 @@ if type == "ab":
         # smoothed_minus = np.convolve(Minus_curve, np.ones(5)/5, mode='same')
         print("Lengths: ", len(z_rel), len(Minus_curve), len(df), len(atom_df))
         # print(len(z_rel), len(Minus_curve))
-        axMinus.plot(z_rel, Minus_curve, label="Minus with Poly")
-        axMinus.plot(z_rel,old_Minus_curve,alpha=00.75, label = "Minus without Poly")
+        # axMinus.plot(z_rel, Minus_curve, label="Minus with Poly")
+        # axMinus.plot(z_rel,old_Minus_curve,alpha=00.75, label = "Minus without Poly")
         # axMinus.plot(z_rel, smoothed_minus, label="Smoothed")
 
         smoothed_minus = -(smoothed_df - smoothed_atom_df)
         smoothed_minus_poly = -(smoothed_df - smoothed_atom_poly)
-        axSmoothMinus.plot(z_rel, smoothed_minus, label="Smoothed raw")
-        axSmoothMinus.plot(z_rel, smoothed_minus_poly, alpha=00.75, label = "Smoothed Poly")
+        # axSmoothMinus.plot(z_rel, smoothed_minus, label="Smoothed raw")
+        # axSmoothMinus.plot(z_rel, smoothed_minus_poly, alpha=00.75, label = "Smoothed Poly")
 
         # only find peaks in the first half of the data 
 
-        x0, height, fwhm, error_x0, error_a, error_fwhm, integral, error, x_fit, y_fit = fit_and_plot(z_rel, Minus_curve, axSmoothMinus, ["00077"], number, "0-1", "b", fit_no=fit_number, offset=offset)
+        x0, height, fwhm, error_x0, error_a, error_fwhm, integral, error, x_fit, y_fit = fit_and_plot(z_rel, df, Minus_curve, axData,axRef,axPeak, ["00186","00111","00112",], number, "0-1", "b", fit_no=fit_number, offset=offset)
         # x0, height, fwhm, error_x0, error_a, error_fwhm, integral, error = fit_and_plot(z_rel, smoothed_minus_poly, axSmoothMinus, ["00119","00111","00112",], number, "0-1", "b", fit_no=fit_number, offset=offset)
 
         As.append(height)
@@ -614,22 +557,22 @@ if type == "ab":
         plt.ylabel('Frequency Shift (Hz)')
         plt.title(f"Z-Spectroscopy BP {number}")
         axData.legend()
-        axMinus.legend()
-        axSmoothMinus.legend()
+        axRef.legend()
+        axPeak.legend()
 
         formatter = ScalarFormatter(useMathText=True)
         formatter.set_powerlimits((-10, -10))
-        axSmoothMinus.xaxis.set_major_formatter(formatter)
+        axPeak.xaxis.set_major_formatter(formatter)
         # axSmoothMinus.yaxis.set_major_formatter(formatter)
 
                 
-        axSmoothMinus.xaxis.set_major_locator(MultipleLocator(1E-10))
-        axSmoothMinus.yaxis.set_major_locator(MultipleLocator(0.05))
+        axPeak.xaxis.set_major_locator(MultipleLocator(1E-10))
+        axPeak.yaxis.set_major_locator(MultipleLocator(0.05))
 
         # fig.append(axData)
         # fig.append(axMinus)
         # fig.append(axSmoothMinus)
-        # plt.show()
+        plt.show()
 
         # time.sleep(5)
 

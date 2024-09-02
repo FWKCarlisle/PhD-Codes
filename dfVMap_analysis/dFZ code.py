@@ -139,8 +139,8 @@ class Spectrum(output_data_spectra_dat):
             return axFit, axResiduals, axDataMinusFit
 
 
-# path = r"C:\Users\Fwkca\OneDrive\Desktop\PhD Data\Nikhil visit BP\Spatial 10 - dFZ" # Path to the folder containing the .dat files
-path = r"C:\Users\Fwkca\OneDrive\Desktop\PhD Data\Nikhil visit BP\BPA3" # Path to the folder containing the .dat files
+path = r"C:\Users\Fwkca\OneDrive\Desktop\PhD Data\Nikhil visit BP\Spatial 10 - dFZ" # Path to the folder containing the .dat files
+# path = r"C:\Users\Fwkca\OneDrive\Desktop\PhD Data\Nikhil visit BP\BPA3" # Path to the folder containing the .dat files
 
 # Get a list of all .dat files in the specified folder
 file_list = [f for f in os.listdir(path) if f.endswith('.dat')]
@@ -158,13 +158,13 @@ biases = []
 numbers = []
 
 
-# file_beginning_atom = "Z-Spectroscopy_BP_" # The beginning of the file name
-# file_beginning = "Z-Spectroscopy_BP_"
-file_beginning_atom = "dfzMap_BPA3_"
-file_beginning = "dfzMap_BPA3_"
+file_beginning_atom = "Z-Spectroscopy_BP_" # The beginning of the file name
+file_beginning = "Z-Spectroscopy_BP_"
+# file_beginning_atom = "dfzMap_BPA3_"
+# file_beginning = "dfzMap_BPA3_"
 
 # file_list = file_list[0:3]
-on_atom_file = "00002"
+on_atom_file = "00184"
 # files = [
 #         ["00015","00016","00017"],
 #         ["00018","00019","00020"], #Sets of files with reference in the middle Spatial 7 Up
@@ -209,12 +209,13 @@ on_atom_file = "00002"
 # files = ["00186","00187","00189","00191","00193","00195","00197","00203","00201","00204",] #up
 # files = ["00188","00190","00192","00194","00196","00198","00200","00202","00205",] #down
 #LR
-# files = ["00208","00209","00211","00213","00215","00217","00219","00221","00223","00225","00210","00212","00214","00216","00218","00220","00222","00224","00226",] #left -> right
+files = ["00208","00209","00211","00213","00215","00217","00219","00221","00223","00225","00210","00212","00214","00216","00218","00220","00222","00224","00226",] #left -> right
+# files = ["00225","00223","00221","00219","00217","00215","00213","00211","00209","00208","00210","00212","00214","00216","00218","00220","00222","00224","00226",] #WF left -> right
 # files = ["00208","00209","00211","00213","00215","00217","00219","00221","00223","00225",] #left
 # files = ["00210","00212","00214","00216","00218","00220","00222","00224","00226",] #right
-
 # UD2 ref: 00184
-files = ["00230","00232","00234","00236","00238","00241","00244","00246","00248","00228","00229","00231","00233","00235","00237","00240","00243","00245","00247"] #up -> down
+# files = ["00248","00246","00244","00241","00238","00236","00234","00232","00230","00228","00229","00231","00233","00235","00237","00240","00243","00245","00247"] #up -> down
+# files = ["00230","00232","00234","00236","00238","00241","00244","00246","00248","00228","00229","00231","00233","00235","00237","00240","00243","00245","00247"] #WF up -> down
 # files = ["00230","00232","00234","00236","00238","00241","00244","00246","00248",] #down
 # files = ["00228","00229","00231","00233","00235","00237","00240","00243","00245","00247",] #up
 
@@ -362,7 +363,7 @@ def fit_and_plot(x_curve, y_curve, ax,exclusion_list, number, label, color,fit_n
         # offset = abs(min(y_data)) + offset # Ensure all y_data values are positive
         #find mean of y curve without peak region
         y_curve = y_curve[:start] + y_curve[end:]
-        offset = 0.07
+        offset = 0
         print("Offset: ", offset)
         y_data = y_data + offset
         # print("Y data: ", y_data)

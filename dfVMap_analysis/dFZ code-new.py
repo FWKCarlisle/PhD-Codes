@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import os
 import numpy as np
 from scipy.optimize import curve_fit
+from scipy.integrate import trapz
 from scipy.signal import find_peaks
 from scipy.integrate import quad
 from matplotlib.ticker import ScalarFormatter, MultipleLocator
@@ -139,8 +140,8 @@ class Spectrum(output_data_spectra_dat):
             return axFit, axResiduals, axDataMinusFit
 
 
-path = r"C:\Users\Fwkca\OneDrive\Desktop\PhD Data\Nikhil visit BP\Spatial 10 - dFZ" # Path to the folder containing the .dat files
-# path = r"C:\Users\Fwkca\OneDrive\Desktop\PhD Data\Nikhil visit BP\BPA1" # Path to the folder containing the .dat files
+# path = r"C:\Users\Fwkca\OneDrive\Desktop\PhD Data\Nikhil visit BP\Spatial 10 - dFZ" # Path to the folder containing the .dat files
+path = r"C:\Users\Fwkca\OneDrive\Desktop\PhD Data\Nikhil visit BP\BPA3" # Path to the folder containing the .dat files
 
 # Get a list of all .dat files in the specified folder
 file_list = [f for f in os.listdir(path) if f.endswith('.dat')]
@@ -158,13 +159,13 @@ biases = []
 numbers = []
 
 
-file_beginning_atom = "Z-Spectroscopy_BP_" # The beginning of the file name
-file_beginning = "Z-Spectroscopy_BP_"
-# file_beginning_atom = "dfzMap_BPA1_"
-# file_beginning = "dfzMap_BPA1_"
+# file_beginning_atom = "Z-Spectroscopy_BP_" # The beginning of the file name
+# file_beginning = "Z-Spectroscopy_BP_"
+file_beginning_atom = "dfzMap_BPA3_"
+file_beginning = "dfzMap_BPA3_"
 
 # file_list = file_list[0:3]
-on_atom_file = "00184"
+on_atom_file = "00002"
 
 #spatital 10 reference: 00184
 #UD1
@@ -177,7 +178,7 @@ on_atom_file = "00184"
 # files = ["00210","00212","00214","00216","00218","00220","00222","00224","00226",] #right
 
 # UD2 ref: 00184
-files = ["00230","00232","00234","00236","00238","00241","00248","00228","00229","00231","00233","00235","00237","00240","00247"] #up -> down
+# files = ["00230","00232","00234","00236","00238","00241","00248","00228","00229","00231","00233","00235","00237","00240","00247"] #up -> down
 # files = ["00230","00232","00234","00236","00238","00241","00244","00246","00248",] #down
 # files = ["00228","00229","00231","00233","00235","00237","00240","00243","00245","00247",] #up
 
@@ -185,9 +186,14 @@ files = ["00230","00232","00234","00236","00238","00241","00248","00228","00229"
 # files = ["00001","00002","00003","00004","00005","00006","00007","00008","00009","00010","00011","00012","00013","00014","00015","00016","00017","00018","00019","00020","00021"] #LR
 # files = ["00022", "00023", "00024", "00025", "00026", "00027", "00028", "00029", "00030", "00031", "00032", "00033", "00034", "00035", "00036", "00037", "00038", "00039", "00040", "00041" ] #UD
 
-# BPA2 (00001-00041) ref: BP1_45
-# files = ["00021","00001","00002","00003","00004","00005","00006","00007","00008","00009","00010","00011","00012","00013","00014","00015","00016","00017","00018","00019","00020",] #UD
+# BPA2 (00001-00041) ref: BP1_45 ( excluding "00008",)
+# files = ["00021","00001","00002","00003","00004","00005","00006","00007","00009","00010","00011","00012","00013","00014","00015","00016","00017","00018","00019","00020",] #UD
 # files = ["00022","00023","00024","00025","00026","00027","00028","00029","00030","00031","00032","00033","00034","00035","00036","00037","00038","00039","00040","00041",] #LR
+
+#BPA3 (00005-00085)ref: 00002 Excliding - 00059, 00071, 00073, 00085
+# files = ["00046", "00047", "00048", "00049", "00050", "00051", "00052", "00053", "00054", "00055", "00056", "00057", "00058","00059", "00060", "00061", "00062", "00063", "00064", "00065", "00066", "00067", "00068", "00069", "00070","00071", "00072","00073", "00074", "00075", "00076", "00077", "00078", "00079","00080", "00081", "00082", "00083", "00084","00085"] #Y
+# exclude  44 13, 16, 19 22, 17, 18
+files = ["00005", "00006", "00007", "00008", "00009", "00010", "00011","00012","00013", "00014", "00015","00016","00017","00018","00019",  "00020", "00021", "00022","00023", "00024", "00025", "00026", "00027", "00028", "00029", "00030", "00031", "00032", "00033", "00034", "00035", "00036", "00037", "00038", "00039", "00040", "00041", "00042", "00043","00044"] #x
 
 
 # TEST
@@ -195,7 +201,7 @@ files = ["00230","00232","00234","00236","00238","00241","00248","00228","00229"
 
 # type = "aba" # reference after every scan
 type = "ab" # reference at start 
-fit_number = 90
+fit_number = 60
 z_rels = []
 dfs = []
 all_dfs = []
@@ -274,7 +280,7 @@ def find_peak_start_end(x_curve, y_curve, exclusion_list, fit_no = 60):
     return start, end
 
 
-def plot_fit(start, end, x, y, ax, color, label, offset=None):
+def plot_fit(start, end, x, y, ax, color, label, alpha, offset=None):
     x_data = x[start:end]
     y_data = y[start:end]
     # print("X data: ", x_data)
@@ -293,7 +299,7 @@ def plot_fit(start, end, x, y, ax, color, label, offset=None):
         print("Offset: ", offset)
         y_data = y_data + offset
         # print("Y data: ", y_data)
-        axPeak.plot(x_data, y_data-offset, 'ro',alpha = 0.45, label="Data")
+        axPeak.plot(x_data, y_data-offset,"o", color = color ,alpha = alpha, label="data for peak")
 
     initial_guess = [0.1, np.mean(x_data), np.std(x_data)]
 
@@ -333,7 +339,7 @@ def plot_fit(start, end, x, y, ax, color, label, offset=None):
             y_fit = y_fit - offset
 
 
-        integral, error = integrate_gaussian(popt, min(x_data), max(x_data))
+        integral, error = integrate_gaussian(popt, x_fit,min(x_data), max(x_data))
         return x0, height, fwhm, error_x0, error_a, error_fwhm, integral, error, x_fit, y_fit
     except RuntimeError as e:
         print(f"Error in curve fitting: {e}")
@@ -344,13 +350,16 @@ def plot_fit(start, end, x, y, ax, color, label, offset=None):
 
 def fit_and_plot(x_curve, df, y_curve, axData,axRef,axPeak,exclusion_list, number, label, color,fit_no = 60, offset=None):
     
+    axData.plot(x_curve, y_curve, label="Minus Curve, pre Poly")
+
     start_1, end_1 = find_peak_start_end(x_curve, y_curve, exclusion_list, fit_no = fit_no)
 
     # Find the dip region
     dip_start = start_1  # Start index of the dip region
     dip_end = end_1  # End index of the dip region
 
-    axPeak.plot(x_curve[dip_start:dip_end], y_curve[dip_start:dip_end], 'go', alpha=0.15, label="Dip region")
+    axData.plot(x_curve[dip_start:dip_end], y_curve[dip_start:dip_end], 'go', alpha=0.15, label="Dip region")
+    # axPeak.plot(x_curve[dip_start:dip_end], y_curve[dip_start:dip_end], 'go', alpha=0.15, label="Dip region")
 
     # Remove the dip region from the x_curve and y_curve
     x_curve_ND = np.concatenate((x_curve[:dip_start], x_curve[dip_end:]))
@@ -358,23 +367,29 @@ def fit_and_plot(x_curve, df, y_curve, axData,axRef,axPeak,exclusion_list, numbe
 
     # ax.plot(x_curve_ND, y_curve_ND, 'bo', alpha=0.45, label="Data without dip")
     # Plot the modified curve without the dip
-    axRef.plot(x_curve_ND, y_curve_ND,color="purple" , alpha=0.45, label="Data without dip")
+    # axRef.plot(x_curve_ND, y_curve_ND,color="purple" , alpha=0.45, label="Data without dip")
 
     #fit a polynomial to the curves
+    poly_coeffs = np.polyfit(x_curve, df, 8)
+    poly = np.polyval(poly_coeffs, x_curve)
+    axRef.plot(x_curve, poly, 'k-',color = "cyan", label="Polynomial fit w. dip")
+
+
     poly_coeffs = np.polyfit(x_curve_ND, y_curve_ND, 8)
     poly = np.polyval(poly_coeffs, x_curve)
-    axRef.plot(x_curve, poly, 'k-', label="Polynomial fit")
+    axRef.plot(x_curve, poly, 'k-', label="Polynomial fit w/o dip")
     
     # Subtract the polynomial curve from y_curve
     y_curve = -(df - poly)
 
 
-    axPeak.plot(x_curve, y_curve,"k-", alpha=0.45, label="Minus Curve")
+    axData.plot(x_curve, y_curve,"k-", alpha=1, label="Minus Curve with Poly")
+    axPeak.plot(x_curve, y_curve, "k-", alpha=0.5, label="Minus Curve with Poly")
     #find peaks in new curve
     start_2, end_2 = find_peak_start_end(x_curve, y_curve, exclusion_list, fit_no = fit_no)
 
-    x0_1, height_1, fwhm_1, error_x0_1, error_a_1, error_fwhm_1, integral_1, error_1, x_fit_1, y_fit_1 = plot_fit(start_1, end_1, x_curve, y_curve, axPeak, "orange", label, offset=offset)
-    x0_2, height_2, fwhm_2, error_x0_2, error_a_2, error_fwhm_2, integral_2, error_2, x_fit_2, y_fit_2 = plot_fit(start_2, end_2, x_curve, y_curve, axPeak, "blue", label, offset=offset)
+    x0_1, height_1, fwhm_1, error_x0_1, error_a_1, error_fwhm_1, integral_1, error_1, x_fit_1, y_fit_1 = plot_fit(start_1, end_1, x_curve, y_curve, axPeak, "orange", label, alpha = 0.7,offset=offset)
+    x0_2, height_2, fwhm_2, error_x0_2, error_a_2, error_fwhm_2, integral_2, error_2, x_fit_2, y_fit_2 = plot_fit(start_2, end_2, x_curve, y_curve, axPeak, "blue", label, alpha = 0.4, offset=offset)
 
     x0 = x0_2
     height = height_2
@@ -387,81 +402,17 @@ def fit_and_plot(x_curve, df, y_curve, axData,axRef,axPeak,exclusion_list, numbe
     x_fit = x_fit_2
     y_fit = y_fit_2
 
-    # x_data = x_curve[start_2:end_2]
-    # y_data = Smooth_y[start_2:end_2]
-    # # print("X data: ", x_data)
-    #     # axMinus.plot(x_data, y_data, 'ro', label="Data")
-
-
-
-
-
-    # print("offset: ", offset)
-    # if offset is not None:
-    # # Add an offset to the data
-    #     # offset = abs(min(y_data)) + offset # Ensure all y_data values are positive
-    #     #find mean of y curve without peak region
-    #     y_curve = y_curve[:start_2] + y_curve[end_2:]
-    #     offset = 0
-    #     print("Offset: ", offset)
-    #     y_data = y_data + offset
-    #     # print("Y data: ", y_data)
-    #     axPeak.plot(x_data, y_data-offset, 'ro',alpha = 0.45, label="Data")
-
-    # initial_guess = [0.1, np.mean(x_data), np.std(x_data)]
-
-    # # ax.plot(x_data, gaussian(x_data, *initial_guess_1), 'k-', label="Initial guess")
-    # print("Initial guess: ", initial_guess)
-    # # print("X data: ", x_data)
-    # # print("Y data: ", y_data)
-    # try:
-    #     popt, pcov = curve_fit(gaussian, x_data, y_data,p0=initial_guess, maxfev=10000)
-    #     # print("Popt: ", popt)
-    #     x0, a, gamma = popt
-    #     height = a * 1E10
-    #     gamma = gamma * 1E10
-    #     fwhm = 2.355 * gamma
-
-    #     perr = np.sqrt(np.diag(pcov))
-    #     error_x0, error_a, error_gamma = perr
-    #     error_a = error_a * 1E10
-    #     error_gamma = error_gamma * 1E10
-
-    #     error_fwhm = 2.355 * error_gamma
-
-    #     print(f"Fitted parameters:")
-    #     print(f"Center (x0): {x0} ± {error_x0}")
-    #     print(f"Height (a): {height} ± {error_a}")
-    #     print(f"FWHM: {fwhm} ± {error_fwhm}")
-
-    #     # Plot the fitted Gaussian with offset
-    #     x_fit = np.linspace(min(x_data), max(x_data), 1000)
-    #     y_fit = gaussian(x_fit, *popt)
-    #     # print("Y fit: ", y_fit)
-
-    #     if offset is None:
-    #         axPeak.plot(x_fit, y_fit, 'b-', label=f'Gaussian fit\nHigh Point: {height:.3f}\nFWHM: {fwhm:.3f}\nCenter: {x0:.3f}')
-    #     else:
-    #         axPeak.plot(x_fit, y_fit-offset, 'b-', label=f'Gaussian fit\nHigh Point: {height:.3f}\nFWHM: {fwhm:.3f}\nCenter: {x0:.3f}')
-    #         y_fit = y_fit - offset
-
-
-    #     integral, error = integrate_gaussian(popt, min(x_data), max(x_data))
-
-    #     return x0, height, fwhm, error_x0, error_a, error_fwhm, integral, error, x_fit, y_fit
-    # except RuntimeError as e:
-    #     print(f"Error in curve fitting: {e}")
-    #     # return axFit, axResiduals, axDataMinusFit
-
-    #     # print("Popt: ", popt)
-    #     return None, None, None, None, None, None, None, None, 0, 0
 
     return x0, height, fwhm, error_x0, error_a, error_fwhm, integral, error, x_fit, y_fit
 
-def integrate_gaussian(params, x_min, x_max):
+def integrate_gaussian(params,x_fit, x_min, x_max):
         a, x0, sigma = params
-        integral, error = quad(lambda x: gaussian(x, a, x0, sigma), x_min, x_max)
-        return integral, error        
+        fitted_curve = gaussian(x_fit, a, x0, sigma)
+        area = trapz(fitted_curve, dx=5)
+        print("area =", area)
+        # integral, error = quad(lambda x: gaussian(x, a, x0, sigma), x_min, x_max)
+        return area ,0
+        # return integral, error   
 
 if type == "ab":
     
@@ -475,7 +426,7 @@ if type == "ab":
     # print(atom_df)
 
     for number in files:
-        fig, [axData, axRef,axPeak] = plt.subplots(nrows=3, ncols=1, sharex=True)
+        fig, [axRef,axData, axPeak] = plt.subplots(nrows=3, ncols=1, sharex=True)
 
         file_name = file_beginning+number + ".dat"    
         print(file_name)
@@ -572,7 +523,7 @@ if type == "ab":
         # fig.append(axData)
         # fig.append(axMinus)
         # fig.append(axSmoothMinus)
-        plt.show()
+        # plt.show()
 
         # time.sleep(5)
 

@@ -9,6 +9,7 @@ import lmfit
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
+from scipy.integrate import trapz
 
 class KPFMSpectrumAnalysis():
     
@@ -209,8 +210,57 @@ class KPFMSpectrumAnalysis():
         self.r = r
         return r
     
+    def PeakFit(self,  peakType='Gaussian', amplitudeGuess=None, centerGuess=None,
+                    sigmaGuess=None, amplitudeMaxLim=None, centerMaxLim=None,
+                    sigmaMaxLim=None, amplitudeMinLim=None, centerMinLim=None,
+                    sigmaMinLim=None):
     
-    def PlotVContactCalculation(self, axFit=None, axResiduals=None, offset=None):
+        x_data = self.x_data.values
+        y_data = self.y_data.values
+        
+        # https://lmfit.github.io/lmfit-py/builtin_models.html#lmfit.models
+        if peakType == 'Gaussian':
+            modelPeak = lmfit.models.GaussianModel() 
+        elif peakType == 'Lorentzian':
+            modelPeak = lmfit.models.LorentzianModel() 
+        else: raise ValueError('peakType must be either Gaussian or Lorentzian')
+        
+        # inbuilt method of guessing the starting values for the fitting params
+        paramsPeak = modelPeak.guess(y_data, x=x_data)
+        
+        paramsPeak['amplitude'].set(value=amplitudeGuess, vary=True, max=amplitudeMaxLim, min=amplitudeMinLim)
+        paramsPeak['center'].set(value=centerGuess, vary=True, max=centerMaxLim, min=centerMinLim)
+        paramsPeak['sigma'].set(value=sigmaGuess, vary=True, max=sigmaMaxLim, min=sigmaMinLim)
+        
+        modelBackground = lmfit.models.LinearModel()
+        paramsBackground = modelBackground.guess(y_data, x=x_data)
+        
+        paramsBackground['intercept'].set(value=y_data.min(), vary=True)
+        paramsBackground['slope'].set(value=0, vary=True)
+        
+        model = modelPeak + modelBackground
+        params = paramsPeak + paramsBackground
+        
+        # make the fit
+        fitInfo = model.fit(y_data, x=x_data, params=params)
+        
+        fit = fitInfo.best_fit
+        
+        # calclate the fit's confidence band to 2 sigma, ie ~95%. fit +/- fitConfBand.
+        fitConfBand = fitInfo.eval_uncertainty(params=fitInfo.params, sigma=2)
+        
+        self.fitConfBand = fitConfBand
+        self.fit = fit
+        self.fitInfo = fitInfo
+        self.area = fitInfo.params['amplitude']
+        self.height = fitInfo.params['height']
+        self.centre = fitInfo.params['center']
+        self.meanAbsRes = np.mean(np.absolute(fitInfo.residual))
+        
+        return fit, fitInfo
+    
+    
+    def PlotVContactCalculation(self, axFit=None, axResiduals=None, offset=True):
         """
         Use this method to visualise the quality of the data and the contact 
         potential calculation. 
@@ -231,6 +281,15 @@ class KPFMSpectrumAnalysis():
 
         def gaussian(x, x0, a, sigma):
             return a * np.exp(-((x - x0)**2) / (2 * sigma**2))
+        
+
+        def integrate_gaussian(params,x_fit, x_min, x_max):
+            a, x0, sigma = params
+            fitted_curve = gaussian(x_fit, a, x0, sigma)
+            area = trapz(fitted_curve, dx=5)
+            print("area =", area)
+            # integral, error = quad(lambda x: gaussian(x, a, x0, sigma), x_min, x_max)
+            return area ,0
 
 
         if axFit == None and axResiduals == None:
@@ -272,16 +331,17 @@ class KPFMSpectrumAnalysis():
         start = max(0, peak_index - fit_range)
         end = min(len(data_minus_fit), peak_index + fit_range)
 
-        x_data = self.bias[start:end]
-        y_data = data_minus_fit[start:end]
+        self.x_data = self.bias[start:end]
+        self.y_data = data_minus_fit[start:end]
         if offset is not None:
         # Add an offset to the data
-            offset = abs(min(y_data)) + offset  # Ensure all y_data values are positive
-            y_data = y_data + offset
+            offset = 0 # Ensure all y_data values are positive
+            self.y_data = self.y_data + offset
 
-        initial_guess = [peak_bias, max(y_data) - 0.1, 1]
+        initial_guess = [peak_bias, max(self.y_data) - 0.1, 1]
+        initial_guess = [peak_bias, np.mean(self.x_data), np.std(self.x_data)]
         try:
-            popt, pcov = curve_fit(gaussian, x_data, y_data, p0=initial_guess, maxfev=4000)
+            popt, pcov = curve_fit(gaussian, self.x_data, self.y_data, p0=initial_guess, maxfev=4000)
         except RuntimeError as e:
             print(f"Error in curve fitting: {e}")
             return axFit, axResiduals, axDataMinusFit
@@ -293,8 +353,11 @@ class KPFMSpectrumAnalysis():
         error_x0, error_a, error_gamma = perr
         error_fwhm = 2.355 * error_gamma
 
+        fit, peak_fit = self.PeakFit(peakType='Gaussian', amplitudeGuess=x0, centerGuess=a, sigmaGuess=gamma,)
+
         # Plot the fitted Gaussian with offset
-        x_fit = np.linspace(min(x_data), max(x_data), 1000)
+        lmfit_x = np.linspace(min(self.x_data), max(self.x_data), 60)
+        x_fit = np.linspace(min(self.x_data), max(self.x_data), 1000)
         y_fit = gaussian(x_fit, *popt)
 
         
@@ -303,8 +366,12 @@ class KPFMSpectrumAnalysis():
         print(f"Height (a): {a} ± {error_a}")
         print(f"FWHM: {fwhm} ± {error_fwhm}")
 
+        # fitted parameters
 
         axDataMinusFit.plot(self.bias, data_minus_fit, label='data - fit', color='blue')
+        smoothed_minus = np.convolve(data_minus_fit, np.ones(5)/5, mode='same')
+        axDataMinusFit.plot(self.bias, smoothed_minus, label='smoothed data - fit', color='green')
+        axDataMinusFit.plot(x_fit, np.zeroes(len(x_fit)), color='black')
         # axDataMinusFit.plot(x_fit, y_fit - offset, label='fitted Gaussian', color='red')  # Subtract the offset for plotting
         
         if self.bias[peak_index] < 0:
@@ -312,8 +379,8 @@ class KPFMSpectrumAnalysis():
                 return axFit, axResiduals, axDataMinusFit
         if offset is not None:
             y_fit = y_fit - offset
-        axDataMinusFit.errorbar(x_fit, y_fit, label=f'Lorentzian fit\nHeight: {a:.2f}\nFWHM: {fwhm:.2f}', color='red')
-
+        axDataMinusFit.errorbar(x_fit, y_fit, label=f'Gaussian fit\nHeight: {a:.2f}\nFWHM: {fwhm:.2f}', color='red')
+        # axDataMinusFit.plot(lmfit_x, fit, label='Gaussian fit LMFit', color='green')
 
 
         axDataMinusFit.set_ylabel('data - fit / Hz')

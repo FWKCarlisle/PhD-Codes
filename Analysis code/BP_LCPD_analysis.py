@@ -395,9 +395,10 @@ import numpy as np
 # d_errors    = np.array([0.01  , 0.01 , 0.01 , 0.01 , 0.01 , 0.01 , 0.01 , 0.01 , 0.01 , 0.01 , 0   , 0.01,   0.01, 0.01, 0.01 , 0.01, 0.01,0.01 ,0.01])
 # peak_YN     = np.array([1,1,1,1,1,1,1,0.5,0,0,1,1,1,1,1,1,0,0,0,])
 # UD1
-# distances   = np.array([  0    ,-0.25 , -0.50, -0.75, -0.99, -1.24, -1.48, -1.73, -1.95, -2.16 ,0.25  , 0.47, 0.74, 0.98, 1.24,1.48 , 1.72, 2.18  ])
-# d_errors    = np.array([ 0.01  , 0.01 , 0.01 , 0.01 , 0.01 , 0.01 , 0.01 , 0.01 , 0.01 , 0.01 , 0    , 0.01, 0.01, 0.01, 0.01, 0.01, 0.01,0.01])
-# peak_YN     = np.array([1,1,1,1,1,1,1,1,0,0,1,1,1,1,1,1,1,0])
+distances   = np.array([0,0.25 , 0.50, 0.75, 0.99, 1.24, 1.48, 1.73, 1.95, 2.16])
+distances_D   = np.array([0.25  , 0.47, 0.74, 0.98, 1.24,1.48 , 1.72, 2.18  ])
+d_errors    = np.array([ 0.01  , 0.01 , 0.01 , 0.01 , 0.01 , 0.01 , 0.01 , 0.01 , 0.01 , 0.01 , 0    , 0.01, 0.01, 0.01, 0.01, 0.01, 0.01,0.01])
+peak_YN     = np.array([1,1,1,1,1,1,1,1,0,0,1,1,1,1,1,1,1,0])
 #UD2
 # distances   = np.array([0,0.25,0.50,0.76,0.98,1.24,1.48,1.74,2.22,-0.22,-0.46,-0.74,-0.97,-1.24,-2.22])
 # d_errors    = np.array([0.01  , 0.01 , 0.01 , 0.01 , 0.01 , 0.01 , 0.01 , 0.01 , 0.01 , 0.01 , 0   , 0.01,   0.01, 0.01, 0.01 , 0.01, 0.01,0.01 ,0.01])
@@ -460,106 +461,118 @@ import numpy as np
 # d_errors    = np.zeros(40)
 # peak_YN = np.array([0,0,1,1,1,1,1,1,1,1,1,1,1,0,1,1,0,1,1,1,1,1,1,1,1,0,1,0,0,1,0,1,0,1,0,1,1,1,0,0])
 # LR
-distances = np.linspace(-1.5,1.5,40)
-d_errors    = np.zeros(40)
-peak_YN = np.array([0,0,0,0,1,1,1,0,0,0,0,0,0,1,0,1,1,1,0,1,0,1,1,0,1,0,0,0,0,1,0,1,1,1,1,1,0,1,0,0])
+# distances = np.linspace(-1.5,1.5,40)
+# d_errors    = np.zeros(40)
+# peak_YN = np.array([0,0,0,0,1,1,1,0,0,0,0,0,0,1,0,1,1,1,0,1,0,1,1,0,1,0,0,0,0,1,0,1,1,1,1,1,0,1,0,0])
 # peak_YN = np.array([0,0,0,1,1,1,1,0,0,0,0,0,0,1,0,1,1,1,0,1,0,1,1,0,1,1,1,0,0,1,0,1,1,1,1,1,0,1,0,0])
 
 
 # Open the file
-with open('data.txt', 'r') as file:
-    # Read the contents of the file
-    contents = file.read()
-print(contents.split('\n')[0])
 
-contents = '\n'.join(contents.split('\n')[1:])
+#  #########
+# with open('data.txt', 'r') as file:
+#     # Read the contents of the file
+#     contents = file.read()
+# print(contents.split('\n')[0])
 
-data_dict = {}
-# Parse the contents
-for line in contents.split('\n'):
-    if line.strip():  # Skip empty lines
-        key, value = line.split(':', 1)
-        key = key.strip()
-        value = value.strip()
-        # Convert the value to a numpy array if possible
-        try:
-            data_dict[key] = np.array(eval(value))
-        except:
-            data_dict[key] = eval(value)
-print(data_dict)
-# Extract the arrays from the dictionary
-numbers = data_dict.get('Numbers', np.array([]))
-as_values = data_dict.get('As', np.array([]))
-errors_on_as = data_dict.get('Errors on As', np.array([]))
-fwhms = data_dict.get('FWHMS', np.array([]))
-errors_on_fwhms = data_dict.get('Errors on FWHMS', np.array([]))
-centers = data_dict.get('Centers', np.array([]))
-errors_on_centers = data_dict.get('Errors on Centers', np.array([]))
-integrals = data_dict.get('Integrals', np.array([]))
-integral_errors = data_dict.get('Integral Errors', np.array([]))
+# contents = '\n'.join(contents.split('\n')[1:])
 
-# Now you can use these arrays in your analysis
+# data_dict = {}
+# # Parse the contents
+# for line in contents.split('\n'):
+#     if line.strip():  # Skip empty lines
+#         key, value = line.split(':', 1)
+#         key = key.strip()
+#         value = value.strip()
+#         # Convert the value to a numpy array if possible
+#         try:
+#             data_dict[key] = np.array(eval(value))
+#         except:
+#             data_dict[key] = eval(value)
+# print(data_dict)
+# # Extract the arrays from the dictionary
+# numbers = data_dict.get('Numbers', np.array([]))
+# as_values = data_dict.get('As', np.array([]))
+# errors_on_as = data_dict.get('Errors on As', np.array([]))
+# fwhms = data_dict.get('FWHMS', np.array([]))
+# errors_on_fwhms = data_dict.get('Errors on FWHMS', np.array([]))
+# centers = data_dict.get('Centers', np.array([]))
+# errors_on_centers = data_dict.get('Errors on Centers', np.array([]))
+# integrals = data_dict.get('Integrals', np.array([]))
+# integral_errors = data_dict.get('Integral Errors', np.array([]))
 
-print("D: ", len(distances)," P: ",len(peak_YN),len(numbers),len(as_values),len(errors_on_as),len(fwhms),len(errors_on_fwhms),len(centers),len(errors_on_centers),len(integrals),len(integral_errors))
+# # Now you can use these arrays in your analysis
 
-plt.scatter(distances, peak_YN, color='red', label='visable Peak or not')
-plt.show()
+
+# print("D: ", len(distances)," P: ",len(peak_YN),len(numbers),len(as_values),len(errors_on_as),len(fwhms),len(errors_on_fwhms),len(centers),len(errors_on_centers),len(integrals),len(integral_errors))
+
+# plt.scatter(distances, peak_YN, color='red', label='visable Peak or not')
+# plt.show()
 
 
 fig, axes = plt.subplots(nrows=2, ncols=2, sharex=True) # Unpack the axes
 (axPosition, axWidth, axDepth, axIntegral) = axes.flatten()
 
-distances_new = []
-d_errors_new = []
-as_values_new = []
-a_errors_new = []
-centers_new = []
-centers_errors_new = []
-fwhms_new = []
-fwhm_errors_new = []
-Integral_new = []
-integral_err_new = []
-numbers_new = []
-peak_YN_new = []
+# distances_new = []
+# d_errors_new = []
+# as_values_new = []
+# a_errors_new = []
+# centers_new = []
+# centers_errors_new = []
+# fwhms_new = []
+# fwhm_errors_new = []
+# Integral_new = []
+# integral_err_new = []
+# numbers_new = []
+# peak_YN_new = []
 
-for i in range(len(distances)):
-    if peak_YN[i] == 1:
-        numbers_new.append(numbers[i])
-        distances_new.append(distances[i])
-        as_values_new.append(as_values[i])
-        centers_new.append(centers[i])
-        fwhms_new.append(fwhms[i])
-        Integral_new.append(integrals[i])
-        peak_YN_new.append(peak_YN[i])
+# for i in range(len(distances)):
+#     if peak_YN[i] == 1:
+#         numbers_new.append(numbers[i])
+#         distances_new.append(distances[i])
+#         as_values_new.append(as_values[i])
+#         centers_new.append(centers[i])
+#         fwhms_new.append(fwhms[i])
+#         Integral_new.append(integrals[i])
+#         peak_YN_new.append(peak_YN[i])
 
-        d_errors_new.append(d_errors[i])
-        a_errors_new.append(errors_on_as[i])
-        centers_errors_new.append(errors_on_centers[i])
-        fwhm_errors_new.append(errors_on_fwhms[i])
-        integral_err_new.append(integral_errors[i])
-
-
-
-distances = np.array(distances_new)
-dip_height = np.array(as_values_new)
-dip_position = np.array(centers_new)
-dip_width = np.array(fwhms_new)
-Integral = np.array(Integral_new)
-numbers_new = np.array(numbers_new)
-
-d_errors = np.array(d_errors_new)
-dip_h_errs = np.array(a_errors_new)
-dip_p_errs = np.array(centers_errors_new)
-dip_w_errs = np.array(fwhm_errors_new)
-integral_err = np.array(integral_err_new)
+#         d_errors_new.append(d_errors[i])
+#         a_errors_new.append(errors_on_as[i])
+#         centers_errors_new.append(errors_on_centers[i])
+#         fwhm_errors_new.append(errors_on_fwhms[i])
+#         integral_err_new.append(integral_errors[i])
 
 
-### DF/DZ curves
+
+# distances = np.array(distances_new)
+# dip_height = np.array(as_values_new)
+# dip_position = np.array(centers_new)
+# dip_width = np.array(fwhms_new)
+# Integral = np.array(Integral_new)
+# numbers_new = np.array(numbers_new)
+
+# d_errors = np.array(d_errors_new)
+# dip_h_errs = np.array(a_errors_new)
+# dip_p_errs = np.array(centers_errors_new)
+# dip_w_errs = np.array(fwhm_errors_new)
+# integral_err = np.array(integral_err_new)
+
+
+# ### DF/DZ curves
+
+# print(len(distances),len(dip_height),len(dip_position),len(dip_width), len(Integral),len(peak_YN))
+
+dip_position = np.array([4.896111212409308, 4.775720055646631, 4.512749431824945, 4.334490192433576, 3.833981274460744, 3.015153428929862, 2.3378660397324156, 1.174091609118029, 0.6357519161398877, 0.784624469144343,4.66472559876295, 4.535106220261021,4.101734996528755,3.5526327782362817, 2.8829834936135685,1.888420310525084,0.8616584250383074,])
+dip_width = np.array([1.4210770391721639, 1.4357791088568945, 1.1245078699219355, 1.1936531595579083, 1.6947887815997775, 1.187595151133195, 0.8111078484401926, 1.5119930059517768, 0.8030070409635858, 0.9598049282803672,1.8121475121706883, 1.1317692902675276,1.3923914413098495,1.6248668534547888, 1.4128415390406859,1.2905362559645737,1.2037375793050684,])
+dip_height = np.array([0.09272312726484806, 0.0747471193986765, 0.08065057745656325, 0.07435826982073238, 0.06712648502932546, 0.0726009752200355, 0.04418472589725702, 0.15578741012493014, 0.08035845234072375, -0.019811340625689903,0.14715868423545975, 0.07565295650877936,0.10007739066408781,0.1363488207099752, 0.08759759100792948,0.09871887980226055,0.1338420774627281,])
+Integral = np.array([176.02623924461147, 142.28746215209227, 121.29763702790022, 118.70432756445334, 150.8337817157872, 115.31159715597443, 40.32584622759499, 331.51245566038955, 110.7977205246733, -23.843688951471762,352.2611983939968, 114.49925038883818,246.0304304301262,295.00976361038016, 165.33600834019717,180.51037078359317,289.26547357230845,])
+
+dip_h_errs = np.zeros(len(dip_height))
+dip_w_errs = np.zeros(len(dip_width))
+dip_p_errs = np.zeros(len(dip_position))
+integral_err = np.zeros(len(Integral))
 
 print(len(distances),len(dip_height),len(dip_position),len(dip_width), len(Integral),len(peak_YN))
-
-
-
 axPosition.errorbar(distances, dip_height, xerr=d_errors, yerr=dip_h_errs, color= 'blue', fmt='o', label='Dip position')
 axWidth.errorbar(distances, dip_width, xerr=d_errors, yerr=dip_w_errs, color= 'orange', fmt='o', label='Dip width')
 axDepth.errorbar(distances, dip_position, xerr=d_errors, yerr=dip_p_errs, color= 'green', fmt='o', label='Dip depth')

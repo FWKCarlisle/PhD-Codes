@@ -142,8 +142,8 @@ class Spectrum(output_data_spectra_dat):
             return axFit, axResiduals, axDataMinusFit
 
 
-path = r"C:\Users\Fwkca\OneDrive\Desktop\PhD Data\Nikhil visit BP\Spatial 10 - dFZ" # Path to the folder containing the .dat files
-# path = r"C:\Users\Fwkca\OneDrive\Desktop\PhD Data\Nikhil visit BP\BPA1" # Path to the folder containing the .dat files
+# path = r"C:\Users\Fwkca\OneDrive\Desktop\PhD Data\Nikhil visit BP\Spatial 10 - dFZ" # Path to the folder containing the .dat files
+path = r"C:\Users\Fwkca\OneDrive\Desktop\PhD Data\Nikhil visit BP\BPA1" # Path to the folder containing the .dat files
 
 # Get a list of all .dat files in the specified folder
 file_list = [f for f in os.listdir(path) if f.endswith('.dat')]
@@ -162,12 +162,12 @@ numbers = []
 
 
 file_beginning_atom = "Z-Spectroscopy_BP_" # The beginning of the file name
-file_beginning = "Z-Spectroscopy_BP_"
+# file_beginning = "Z-Spectroscopy_BP_"
 # file_beginning_atom = "dfzMap_BPA1_"
-# file_beginning = "dfzMap_BPA1_" 
+file_beginning = "dfzMap_BPA1_" 
 
 # file_list = file_list[0:3]
-on_atom_file = "00184"
+on_atom_file = "00546"
 
 #spatital 8 
 # number =                       [517   , 518   , 519   , 520   , 521   , 522   , 523   , 524   , 525   , 526   , 527   , 528   , 529   , 530   ] #Number on image
@@ -184,8 +184,8 @@ on_atom_file = "00184"
 # files = ["00186","00187","00189","00191","00193","00195","00197","00203","00201","00204","00188","00190","00192","00194","00196","00198","00200","00202","00205",] #up -> down
 
 # files = ["00186","00187","00189","00191","00193","00195","00197","00203","00201","00204",] #up
-files = ["00188","00190","00192","00194","00196","00198","00200","00202","00205",] #down
-# files = ["00204",]
+# files = ["00188","00190","00192","00194","00196","00198","00200","00202","00205",] #down
+# files = ["00200",]
 #LR
 # files = ["00222"]
 # files = ["00208","00209","00211","00213","00215","00217","00219","00221","00223","00225","00210","00212","00214","00216","00218","00220","00222","00224","00226",] #left -> right
@@ -198,7 +198,7 @@ files = ["00188","00190","00192","00194","00196","00198","00200","00202","00205"
 # files = ["00228","00229","00231","00233","00235","00237","00240","00243","00245","00247",] #up
 
 # BPA1ref (00001-00042) ref: 00546 
-# files = ["00001","00002","00003","00004","00005","00006","00007","00008","00009","00010","00011","00012","00013","00014","00015","00016","00017","00018","00019","00020","00021"] #LR
+files = ["00001","00002","00003","00004","00005","00006","00007","00008","00009","00010","00011","00012","00013","00014","00015","00016","00017","00018","00019","00020","00021"] #LR
 # files = ["00022", "00023", "00024", "00025", "00026", "00027", "00028", "00029", "00030", "00031", "00032", "00033", "00034", "00035", "00036", "00037", "00038", "00039", "00040", "00041" ] #UD
 
 # BPA2 (00001-00041) ref: BP1_45 ( excluding "00008",)
@@ -262,8 +262,9 @@ def find_peak_start_end(x_curve, y_curve, exclusion_list, fit_no = 60):
         peak_index = 1
     if peak_index == len(y_curve):
         peak_index = len(y_curve)-1
-    if y_curve[peak_index] - y_curve[peak_index-1] > 0.1 or number in exclusion_list:
-        exclude_points = 2
+    try:
+        if y_curve[peak_index] - y_curve[peak_index+1] > 0.1 or number in exclusion_list:
+            exclude_points = 2
             # if the peak is an outlier point, find the next point
         print("Peak is an outlier point")
         print("Peak next point: ", y_curve[peak_index] - y_curve[peak_index-1])
@@ -289,6 +290,34 @@ def find_peak_start_end(x_curve, y_curve, exclusion_list, fit_no = 60):
         print("Curve max: ", y_curve[peak_index])
         peak_index = np.argmax(y_curve[0:peak_index])
         print("New curve max: ", y_curve[peak_index])
+    except:
+        if y_curve[peak_index] - y_curve[peak_index-1] > 0.1 or number in exclusion_list:
+            exclude_points = 2
+                # if the peak is an outlier point, find the next point
+            print("Peak is an outlier point")
+            print("Peak next point: ", y_curve[peak_index] - y_curve[peak_index-1])
+
+            mask = np.ones(len(y_curve), dtype=bool)
+            start_exclude = max(0, peak_index - exclude_points)
+            end_exclude = min(len(y_curve), peak_index + exclude_points + 1)
+            mask[start_exclude:end_exclude] = False
+
+            # Use the mask to find the new peak index
+            filtered_curve = y_curve[mask]
+            new_peak_index_in_filtered = np.argmax(filtered_curve)
+
+            # Map the index back to the original array
+            new_peak_index = np.where(mask)[0][new_peak_index_in_filtered]
+
+            print("New curve max index: ", new_peak_index)
+            print("New curve max: ", y_curve[new_peak_index])
+
+            # Update the peak_index to the newly found peak
+            peak_index = new_peak_index
+
+            print("Curve max: ", y_curve[peak_index])
+            peak_index = np.argmax(y_curve[0:peak_index])
+            print("New curve max: ", y_curve[peak_index])
 
     
         
@@ -405,14 +434,18 @@ def fit_and_plot(x_curve, df, y_curve, axData,axRef,axPeak,exclusion_list, numbe
     dip_start = start_1  # Start index of the dip region
     dip_end = end_1  # End index of the dip region
     
-    if number == "00197":
-        dip_start = 250
-        dip_end = 375
-    elif number == "00203":
-        dip_start = 300
-        dip_end = 390
-    # dip_start = 325
-    # dip_end = 392
+    # info_list = [[250,375],[300,390],[190,285],[200,350],[275,390],[290,399]]
+    # number_list = ["00197","00203","00192","00196","00198","00200"]
+    # number_list = ["00217","00219","00221","00223","00225","00218","00220"]
+    # info_list = [[250,360],[300,390],[190,285],[200,350],[275,390],[250,350],[300,390]]
+    # if number in number_list:
+    #     index = number_list.index(number)
+    #     dip_start = info_list[index][0]
+    #     dip_end = info_list[index][1]
+    
+    # dip_start = 300
+    # dip_end = 390
+
     # if len(x_curve) - dip_end < 5:
     #     dip_end = len(x_curve) - 5 
     #     fit_no = 100

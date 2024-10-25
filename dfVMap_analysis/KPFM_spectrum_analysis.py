@@ -9,7 +9,7 @@ import lmfit
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
-from scipy.integrate import trapz
+# from scipy.integrate import trapz
 
 class KPFMSpectrumAnalysis():
     

@@ -200,7 +200,7 @@ class SpectraSet():
     # ==================================================================================================================
 
 
-    def PlotStacked(self):
+    # def PlotStacked(self):
         
       
     def ScatterMap(self, z, x='x_pos', y='y_pos', theta=0, ax=None, fig=None, 
@@ -357,6 +357,7 @@ class SpectraSet():
 class PlotStacked():
 
     def __init__(self):
+        print('')
 
     def TuneCmap(self, ax, cmap='gist_rainbow', minVal=None, maxVal=None,
                  nDivisions=None, cmapScale='linear',
@@ -573,148 +574,148 @@ class DriftCorrectedMap():
 
 
 
+if __name__ == '__main__':
 
+    path = r'data\test_data'
 
-path = r'data\test_data'
+    # %%
+    # =============================================================================
+    # dI/dV data
+    # =============================================================================
 
-# %%
-# =============================================================================
-# dI/dV data
-# =============================================================================
+    fileNames = MyFiles().DirFilter(path, baseName='dfVMap_InSb_20_')
 
-fileNames = MyFiles().DirFilter(path, baseName='dfVMap_InSb_20_')
+    xGrid = np.load(path + r'\xGrid_20.npy')
+    yGrid = np.load(path + r'\yGrid_20.npy')
 
-xGrid = np.load(path + r'\xGrid_20.npy')
-yGrid = np.load(path + r'\yGrid_20.npy')
+    theta = 2.4
 
-theta = 2.4
+    # %% Analysis
+    spectra = SpectraSet(path, fileNames)
 
-# %% Analysis
-spectra = SpectraSet(path, fileNames)
+    spectra.DIDVAnalysis(centerGuess=-0.09, sigmaGuess=0.01, amplitudeMaxLim=1e-11, amplitudeMinLim=0)
 
-spectra.DIDVAnalysis(centerGuess=-0.09, sigmaGuess=0.01, amplitudeMaxLim=1e-11, amplitudeMinLim=0)
+    # %% 2D plot
+    xCentre = np.average(xGrid)
+    yCentre = np.average(yGrid)
 
-# %% 2D plot
-xCentre = np.average(xGrid)
-yCentre = np.average(yGrid)
+    spectra.Plot2D('fitHeight', xGrid, yGrid, xCentre, yCentre,
+                yLabel='dI/dV fitted peak height')
 
-spectra.Plot2D('fitHeight', xGrid, yGrid, xCentre, yCentre,
-               yLabel='dI/dV fitted peak height')
+    # %% stacked plot
+    #ax = spectra.PlotStacked(ncols=20, legendLabel='data')
+    #spectra.PlotStacked(y='fit', ax=ax, color='red', legendLabel='fit')
 
-# %% stacked plot
-#ax = spectra.PlotStacked(ncols=20, legendLabel='data')
-#spectra.PlotStacked(y='fit', ax=ax, color='red', legendLabel='fit')
+    # %% real spasitions of spectra (to see drift)
+    spectra.PlotSpectraPos()
 
-# %% real spasitions of spectra (to see drift)
-spectra.PlotSpectraPos()
+    # %% Maps
+    spectra.Map('meanAbsRes', xGrid, yGrid, theta=theta, colourbarLabel='mean absolute residuals',
+                cmapScale='linear', cmap='bone_r')
 
-# %% Maps
-spectra.Map('meanAbsRes', xGrid, yGrid, theta=theta, colourbarLabel='mean absolute residuals',
-            cmapScale='linear', cmap='bone_r')
+    spectra.Map('fitCentre', xGrid, yGrid, theta=theta, colourbarLabel='fitted peak centre',
+                cmapScale='linear', cmap='bone_r')
 
-spectra.Map('fitCentre', xGrid, yGrid, theta=theta, colourbarLabel='fitted peak centre',
-            cmapScale='linear', cmap='bone_r')
+    spectra.Map('fitArea', xGrid, yGrid, theta=theta, colourbarLabel='dI/dV fitted peak area',
+                cmapScale='log', cmap='BuPu')
 
-spectra.Map('fitArea', xGrid, yGrid, theta=theta, colourbarLabel='dI/dV fitted peak area',
-            cmapScale='log', cmap='BuPu')
+    spectra.Map('fitHeight', xGrid, yGrid, theta=theta, colourbarLabel='dI/dV fitted peak height',
+                cmapScale='log', cmap='BuPu')
 
-spectra.Map('fitHeight', xGrid, yGrid, theta=theta, colourbarLabel='dI/dV fitted peak height',
-            cmapScale='log', cmap='BuPu')
+    # %% Scatter Maps to check that maps are done correctly
 
-# %% Scatter Maps to check that maps are done correctly
+    spectra.ScatterMap('meanAbsRes', xGrid, yGrid, colourbarLabel='mean abs(dI/dV fitted peak residuals)',
+                    cmapScale='linear', cmap='bone_r')
 
-spectra.ScatterMap('meanAbsRes', xGrid, yGrid, colourbarLabel='mean abs(dI/dV fitted peak residuals)',
-                   cmapScale='linear', cmap='bone_r')
+    spectra.ScatterMap('fitArea', xGrid, yGrid, colourbarLabel='dI/dV fitted peak area',
+                    cmapScale='log', cmap='BuPu')
 
-spectra.ScatterMap('fitArea', xGrid, yGrid, colourbarLabel='dI/dV fitted peak area',
-                   cmapScale='log', cmap='BuPu')
+    spectra.ScatterMap('fitHeight', xGrid, yGrid, colourbarLabel='dI/dV fitted peak height',
+                    cmapScale='log', cmap='BuPu')
 
-spectra.ScatterMap('fitHeight', xGrid, yGrid, colourbarLabel='dI/dV fitted peak height',
-                   cmapScale='log', cmap='BuPu')
+    # %%
+    # =============================================================================
+    # df(V) data
+    # =============================================================================
 
-# %%
-# =============================================================================
-# df(V) data
-# =============================================================================
+    fileNames = MyFiles().DirFilter(path, baseName='dfVMap_InSb_40_')
 
-fileNames = MyFiles().DirFilter(path, baseName='dfVMap_InSb_40_')
+    xGrid = np.load(path + r'\xGrid_40.npy')
+    yGrid = np.load(path + r'\yGrid_40.npy')
 
-xGrid = np.load(path + r'\xGrid_40.npy')
-yGrid = np.load(path + r'\yGrid_40.npy')
+    masks = np.load(path + r'\40masks.npy')
 
-masks = np.load(path + r'\40masks.npy')
+    theta = 1.6
 
-theta = 1.6
+    # %% Analysis
+    spectra = SpectraSet(path, fileNames)
 
-# %% Analysis
-spectra = SpectraSet(path, fileNames)
+    spectra.KPFMAnalysis()
 
-spectra.KPFMAnalysis()
+    # %% 2D plot + 1/r fit, excluding data inside ring
+    xCentre = np.average(xGrid)
+    yCentre = np.average(yGrid)
 
-# %% 2D plot + 1/r fit, excluding data inside ring
-xCentre = np.average(xGrid)
-yCentre = np.average(yGrid)
+    fig, ax = plt.subplots()
+    spectra.Plot2D('vContact', xGrid, yGrid, xCentre, yCentre,
+                yLabel='Contact Potential (V)', rMin=2, fit=True)
 
-fig, ax = plt.subplots()
-spectra.Plot2D('vContact', xGrid, yGrid, xCentre, yCentre,
-               yLabel='Contact Potential (V)', rMin=2, fit=True)
+    # %% 2D plot + 1/r fit, for different angle slices
+    fig, ax = plt.subplots()
+    spectra.Plot2D('vContact', xGrid, yGrid, xCentre=xCentre, yCentre=yCentre,
+                yLabel='Contact Potential (V)', rMin=2,
+                thetaMin=25, thetaMax=110, color='red', fig=fig, ax=ax, fit=True)
 
-# %% 2D plot + 1/r fit, for different angle slices
-fig, ax = plt.subplots()
-spectra.Plot2D('vContact', xGrid, yGrid, xCentre=xCentre, yCentre=yCentre,
-               yLabel='Contact Potential (V)', rMin=2,
-               thetaMin=25, thetaMax=110, color='red', fig=fig, ax=ax, fit=True)
+    spectra.Plot2D('vContact', xGrid, yGrid, xCentre=xCentre, yCentre=yCentre,
+                yLabel='Contact Potential (V)', rMin=2,
+                thetaMin=-155, thetaMax=-70, color='blue', ax=ax, fig=fig, fit=True)
 
-spectra.Plot2D('vContact', xGrid, yGrid, xCentre=xCentre, yCentre=yCentre,
-               yLabel='Contact Potential (V)', rMin=2,
-               thetaMin=-155, thetaMax=-70, color='blue', ax=ax, fig=fig, fit=True)
+    # %% stacked plot
+    #ax = spectra.PlotStacked(ncols=20)
+    #spectra.PlotStacked(y='fit', ax=ax, color='red')
 
-# %% stacked plot
-#ax = spectra.PlotStacked(ncols=20)
-#spectra.PlotStacked(y='fit', ax=ax, color='red')
+    # %% real spectra positions (to see drift)
+    spectra.PlotSpectraPos()
 
-# %% real spectra positions (to see drift)
-spectra.PlotSpectraPos()
+    # %% Maps
 
-# %% Maps
+    spectra.Map('vContact', xGrid, yGrid, masks=masks, theta=theta, colourbarLabel='Contact Potential (V)',
+                cmapScale='linear', cmap='inferno')
 
-spectra.Map('vContact', xGrid, yGrid, masks=masks, theta=theta, colourbarLabel='Contact Potential (V)',
-            cmapScale='linear', cmap='inferno')
+    spectra.Map('meanAbsRes', xGrid, yGrid, masks=masks, theta=theta, colourbarLabel='mean absolute residuals (V)',
+                cmapScale='linear', cmap='bone_r')
 
-spectra.Map('meanAbsRes', xGrid, yGrid, masks=masks, theta=theta, colourbarLabel='mean absolute residuals (V)',
-            cmapScale='linear', cmap='bone_r')
+    spectra.Map('fitA', xGrid, yGrid, masks=masks, theta=theta, colourbarLabel='a fit param for $ax^2+bx+c$',
+                cmapScale='linear', cmap='bone_r')
 
-spectra.Map('fitA', xGrid, yGrid, masks=masks, theta=theta, colourbarLabel='a fit param for $ax^2+bx+c$',
-            cmapScale='linear', cmap='bone_r')
+    # %% Scatter Maps to check maps OK
+    spectra.ScatterMap('vContact', xGrid, yGrid, colourbarLabel='Contact Potential Diff',
+                    cmapScale='linear', cmap='inferno')
 
-# %% Scatter Maps to check maps OK
-spectra.ScatterMap('vContact', xGrid, yGrid, colourbarLabel='Contact Potential Diff',
-                   cmapScale='linear', cmap='inferno')
+    spectra.ScatterMap('vContact', xGrid, yGrid, colourbarLabel='Contact Potential Diff',
+                    cmapScale='linear', cmap='inferno')
 
-spectra.ScatterMap('vContact', xGrid, yGrid, colourbarLabel='Contact Potential Diff',
-                   cmapScale='linear', cmap='inferno')
+    spectra.ScatterMap('meanAbsRes', xGrid, yGrid, colourbarLabel='mean absolute residuals (V)',
+                    cmapScale='linear', cmap='bone_r')
 
-spectra.ScatterMap('meanAbsRes', xGrid, yGrid, colourbarLabel='mean absolute residuals (V)',
-                   cmapScale='linear', cmap='bone_r')
+    # %%
+    # =============================================================================
+    # I/V data (to make current maps for both dI/dV and df(V) datasets)
+    # =============================================================================
 
-# %%
-# =============================================================================
-# I/V data (to make current maps for both dI/dV and df(V) datasets)
-# =============================================================================
+    # %%
 
-# %%
+    spectra = SpectraSet(path, fileNames)
 
-spectra = SpectraSet(path, fileNames)
+    current = spectra.ReadChannel('Current [AVG] (A)')
 
-current = spectra.ReadChannel('Current [AVG] (A)')
+    currentMax = [max(c) for c in current]
 
-currentMax = [max(c) for c in current]
+    # %% Map
+    spectra.Map(currentMax, xGrid, yGrid, masks=masks, theta=theta, colourbarLabel='max current (A)',
+                cmapScale='log', cmap='bone_r')
 
-# %% Map
-spectra.Map(currentMax, xGrid, yGrid, masks=masks, theta=theta, colourbarLabel='max current (A)',
-            cmapScale='log', cmap='bone_r')
-
-# %% Scatter
-spectra.ScatterMap(currentMax, xGrid, yGrid, colourbarLabel='max current (A)',
-                   cmapScale='log', cmap='bone_r')
-plt.show()
+    # %% Scatter
+    spectra.ScatterMap(currentMax, xGrid, yGrid, colourbarLabel='max current (A)',
+                    cmapScale='log', cmap='bone_r')
+    plt.show()

@@ -1,4 +1,4 @@
-from read_spectra import output_data_spectra_dat
+from read_spectra_new import output_data_spectra_dat
 from KPFM_spectrum_analysis import KPFMSpectrumAnalysis
 import scipy
 import numpy as np
@@ -133,31 +133,13 @@ class Spectrum(output_data_spectra_dat):
             return axFit, axResiduals, axDataMinusFit
         
 ### open "C:\Users\ppxfc1\OneDrive - The University of Nottingham\Desktop\PhD\Code\PhD-Codes\seder-jarvis\df_sample.txt"
-# and read the data
-
-with open("C:\\Users\\ppxfc1\\OneDrive - The University of Nottingham\\Desktop\\PhD\\Code\\PhD-Codes\\seder-jarvis\\df_sample.txt") as f:
-    data = f.readlines()
-    new_data = []
-    for line in data:
-        line = line.split()
-        new_data.append([float(i) for i in line])
-data = np.array(new_data)
-
-atom_z_rel = data[:, 0]
-atom_df = data[:, 1]
-
-amplitude = 1e-10 #in pm
-k_spring = 2000 #in N/m
-frequency_res = 20000 #in Hz
-
-
 def c_term(df, z, A, j):
-    # print("c_term - j", j)
-    c_term_1 = df[j]*(z[j+1] - z[j])
-    c_term_2 = 2*(np.sqrt(A)/(8*np.sqrt(np.pi)))*df[j]*np.sqrt(z[j+1] - z[j])
-    c_term_3 = -2*((A**(3/2))/np.sqrt(2))*((df[j+1] - df[j])/(z[j+1] - z[j]))*np.sqrt(z[j+1] - z[j])
-    c_term = c_term_1 + c_term_2 + c_term_3
-    return c_term
+        # print("c_term - j", j)
+        c_term_1 = df[j]*(z[j+1] - z[j])
+        c_term_2 = 2*(np.sqrt(A)/(8*np.sqrt(np.pi)))*df[j]*np.sqrt(z[j+1] - z[j])
+        c_term_3 = -2*((A**(3/2))/np.sqrt(2))*((df[j+1] - df[j])/(z[j+1] - z[j]))*np.sqrt(z[j+1] - z[j])
+        c_term = c_term_1 + c_term_2 + c_term_3
+        return c_term
 
 def g_l (z, df,A,  l, j):
     # print("g_l - l", l)
@@ -216,85 +198,104 @@ def calc_force_trapz (z, df, A, k, f_0):
         
         force[j] = 2 * k * (corr1 + corr2 + corr3 + integral)
     return force
+# and read the data
+if __name__ == "__main__":
+    with open("C:\\Users\\ppxfc1\\OneDrive - The University of Nottingham\\Desktop\\PhD\\Code\\PhD-Codes\\seder-jarvis\\df_sample.txt") as f:
+        data = f.readlines()
+        new_data = []
+        for line in data:
+            line = line.split()
+            new_data.append([float(i) for i in line])
+    data = np.array(new_data)
 
-# forces = calc_force_array(atom_z_rel, atom_df, amplitude, frequency_res, len(atom_z_rel))
-# forces_altered = calc_force_array(atom_z_rel - amplitude, atom_df, amplitude, frequency_res, len(atom_z_rel))
-forces_trapz = calc_force_trapz(atom_z_rel, atom_df, amplitude, k_spring, frequency_res)
+    atom_z_rel = data[:, 0]
+    atom_df = data[:, 1]
 
-# forces_nN = forces * 1e9
-# forces_altered_nN = forces_altered * 1e9
-forces_trapz_nN = forces_trapz * 1e9
-
-forces_matlab_nN = 1e-10 * np.array([-0.3870,-0.3858,-0.4025,   -0.4025,   -0.4121,   -0.4210,   -0.4379,   -0.4448,   -0.4674,   -0.4784,   -0.5070,   -0.5162,   -0.5431,   -0.5604,   -0.5684,   -0.5640,   -0.5696,   -0.5491,   -0.5266,   -0.5007,   -0.4607,   -0.4200,   -0.3825,   -0.3461,   -0.2987,   -0.2685,   -0.2311,   -0.2020,   -0.1904, -0.1504,   -0.1424,   -0.1213,   -0.1029,   -0.1011,   -0.0815,   -0.0670,   -0.0710,   -0.0491,   -0.0586,   -0.0451,   -0.0306,   -0.0420,   -0.0318,   -0.0269,   -0.0296,   -0.0202,   -0.0303,   -0.0099,   -0.0224,   -0.0106,   -0.0178,   -0.0097,   -0.0181,   -0.0112,-0.0067,   -0.0047,   -0.0078,   -0.0033,   -0.0082,   -0.0096,   -0.0098,   -0.0070,    0.0044,   -0.0067,   -0.0077,   -0.0001,   -0.0063,    0.0029,-0.0060,   -0.0037,   -0.0070,-0.0030,    0.0030,   -0.0067,    0.0077,   -0.0060,   -0.0018,    0.0070,   -0.0061,    0.0011,   -0.0040,    0.0004,   -0.0056,   -0.0057,    0.0033,    0.0036,   -0.0046,   -0.0044,   -0.0033,    0.0031,   -0.0001,    0.0003,   -0.0029,    0.0031,   -0.0057,    0.0017,0.0040, -0.0045])
-
-
-fig, [dfAx, fAx, diffAx] = plt.subplots(3, 1)
-
-dfAx.plot(atom_z_rel, atom_df, label='df')
-# fAx.plot(atom_z_rel, forces_nN, label='Forces')
-# fAx.plot(atom_z_rel, forces_altered_nN, alpha = 0.5, label='Forces altered')
-plt.xlabel('Z position (nm)')
-dfAx.set_ylabel('df (Hz)')
-fAx.set_ylabel('Force (nN)')
-# plt.title('df vs Z position')
-plt.tick_params(direction='in')
+    amplitude = 1e-10 #in pm
+    k_spring = 2000 #in N/m
+    frequency_res = 20000 #in Hz
 
 
-mathematica_x = []
-mathematica_force = []
+    
 
-with open(r"C:\Users\ppxfc1\OneDrive - The University of Nottingham\Desktop\PhD\Code\PhD-Codes\seder-jarvis\Force_SJ.csv") as file:
-    for i in range(10):
-        file.readline()
-    for line in file:
-        # print(line)
-        line = line.split(",")
-        mathematica_x.append(float(line[0]))
-        mathematica_force.append(float(line[1]))
+    # forces = calc_force_array(atom_z_rel, atom_df, amplitude, frequency_res, len(atom_z_rel))
+    # forces_altered = calc_force_array(atom_z_rel - amplitude, atom_df, amplitude, frequency_res, len(atom_z_rel))
+    forces_trapz = calc_force_trapz(atom_z_rel, atom_df, amplitude, k_spring, frequency_res)
 
-mathematica_x = np.array(mathematica_x)
-mathematica_force = np.array(mathematica_force)
-# if len(mathematica_force) == len(forces):
-#     dif_forces = mathematica_force - forces
-#     diffAx.plot(atom_z_rel, dif_forces, label='Mathematica F - Forces')
-#     df_forces = atom_df - mathematica_force
-mathematica_force = np.append(mathematica_force, mathematica_force[-3:])
-mathematica_x = np.append(mathematica_x, mathematica_x[-3:])
-forces_matlab = np.append(forces_matlab_nN, forces_matlab_nN[-3:]) * 1e9
-forces_trapz_nN = np.append(forces_trapz_nN, forces_trapz_nN[-3:])
+    # forces_nN = forces * 1e9
+    # forces_altered_nN = forces_altered * 1e9
+    forces_trapz_nN = forces_trapz * 1e9
+
+    forces_matlab_nN = 1e-10 * np.array([-0.3870,-0.3858,-0.4025,   -0.4025,   -0.4121,   -0.4210,   -0.4379,   -0.4448,   -0.4674,   -0.4784,   -0.5070,   -0.5162,   -0.5431,   -0.5604,   -0.5684,   -0.5640,   -0.5696,   -0.5491,   -0.5266,   -0.5007,   -0.4607,   -0.4200,   -0.3825,   -0.3461,   -0.2987,   -0.2685,   -0.2311,   -0.2020,   -0.1904, -0.1504,   -0.1424,   -0.1213,   -0.1029,   -0.1011,   -0.0815,   -0.0670,   -0.0710,   -0.0491,   -0.0586,   -0.0451,   -0.0306,   -0.0420,   -0.0318,   -0.0269,   -0.0296,   -0.0202,   -0.0303,   -0.0099,   -0.0224,   -0.0106,   -0.0178,   -0.0097,   -0.0181,   -0.0112,-0.0067,   -0.0047,   -0.0078,   -0.0033,   -0.0082,   -0.0096,   -0.0098,   -0.0070,    0.0044,   -0.0067,   -0.0077,   -0.0001,   -0.0063,    0.0029,-0.0060,   -0.0037,   -0.0070,-0.0030,    0.0030,   -0.0067,    0.0077,   -0.0060,   -0.0018,    0.0070,   -0.0061,    0.0011,   -0.0040,    0.0004,   -0.0056,   -0.0057,    0.0033,    0.0036,   -0.0046,   -0.0044,   -0.0033,    0.0031,   -0.0001,    0.0003,   -0.0029,    0.0031,   -0.0057,    0.0017,0.0040, -0.0045])
 
 
+    fig, [dfAx, fAx, diffAx] = plt.subplots(3, 1)
+
+    dfAx.plot(atom_z_rel, atom_df, label='df')
+    # fAx.plot(atom_z_rel, forces_nN, label='Forces')
+    # fAx.plot(atom_z_rel, forces_altered_nN, alpha = 0.5, label='Forces altered')
+    plt.xlabel('Z position (nm)')
+    dfAx.set_ylabel('df (Hz)')
+    fAx.set_ylabel('Force (nN)')
+    # plt.title('df vs Z position')
+    plt.tick_params(direction='in')
 
 
-mathematica_force_nN = mathematica_force * 1e9 
-fAx.plot(mathematica_x, mathematica_force_nN, alpha=0.5, label='Mathematica force')
-fAx.plot(atom_z_rel, forces_matlab, alpha=0.5, label='Matlab force')
-fAx.plot(atom_z_rel, forces_trapz_nN, alpha=0.5, label='Forces trapz')
-# mathematica.plot(mathematica_/x, mathematica_force
-# mathematica.set_ylabel('Force (nN)')
+    mathematica_x = []
+    mathematica_force = []
 
-print(atom_z_rel)
-print(atom_df)
+    with open(r"C:\Users\ppxfc1\OneDrive - The University of Nottingham\Desktop\PhD\Code\PhD-Codes\seder-jarvis\Force_SJ.csv") as file:
+        for i in range(10):
+            file.readline()
+        for line in file:
+            # print(line)
+            line = line.split(",")
+            mathematica_x.append(float(line[0]))
+            mathematica_force.append(float(line[1]))
+
+    mathematica_x = np.array(mathematica_x)
+    mathematica_force = np.array(mathematica_force)
+    # if len(mathematica_force) == len(forces):
+    #     dif_forces = mathematica_force - forces
+    #     diffAx.plot(atom_z_rel, dif_forces, label='Mathematica F - Forces')
+    #     df_forces = atom_df - mathematica_force
+    mathematica_force = np.append(mathematica_force, mathematica_force[-3:])
+    mathematica_x = np.append(mathematica_x, mathematica_x[-3:])
+    forces_matlab = np.append(forces_matlab_nN, forces_matlab_nN[-3:]) * 1e9
+    forces_trapz_nN = np.append(forces_trapz_nN, forces_trapz_nN[-3:])
 
 
-# print(len(forces), len(mathematica_force_nN))
-diffAx.set_ylabel('Difference in force (nN)')
-diffAx.set_xlabel('Z position (nm)')
-# diffAx.plot(atom_z_rel, df_forces, label='df - Mathematica F')
-# diffAx.plot(atom_z_rel, df_forces2, label='df - Forces')
+
+
+    mathematica_force_nN = mathematica_force * 1e9 
+    fAx.plot(mathematica_x, mathematica_force_nN, alpha=0.5, label='Mathematica force')
+    fAx.plot(atom_z_rel, forces_matlab, alpha=0.5, label='Matlab force')
+    fAx.plot(atom_z_rel, forces_trapz_nN, alpha=0.5, label='Forces trapz')
+    # mathematica.plot(mathematica_/x, mathematica_force
+    # mathematica.set_ylabel('Force (nN)')
+
+    print(atom_z_rel)
+    print(atom_df)
+
+
+    # print(len(forces), len(mathematica_force_nN))
+    diffAx.set_ylabel('Difference in force (nN)')
+    diffAx.set_xlabel('Z position (nm)')
+    # diffAx.plot(atom_z_rel, df_forces, label='df - Mathematica F')
+    # diffAx.plot(atom_z_rel, df_forces2, label='df - Forces')
 
 
 
-#repeat the last 2 lines for the mathematica force
+    #repeat the last 2 lines for the mathematica force
 
-diff_forces = mathematica_force_nN - forces_trapz_nN
-diff_matlab = mathematica_force_nN - forces_matlab
-diffAx.plot(atom_z_rel, diff_forces, label='Mathematica F - Forces')
-diffAx.plot(atom_z_rel, diff_matlab, label='Mathematica F - Matlab F')
+    diff_forces = mathematica_force_nN - forces_trapz_nN
+    diff_matlab = mathematica_force_nN - forces_matlab
+    diffAx.plot(atom_z_rel, diff_forces, label='Mathematica F - Forces')
+    diffAx.plot(atom_z_rel, diff_matlab, label='Mathematica F - Matlab F')
 
-diffAx.legend()
-dfAx.legend()
-fAx.legend()
+    diffAx.legend()
+    dfAx.legend()
+    fAx.legend()
 
-plt.show()
+    plt.show()
 

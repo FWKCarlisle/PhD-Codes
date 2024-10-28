@@ -47,10 +47,12 @@ class output_data_spectra_dat():
         #Split at the '[DATA]' section. The second in the list is our data with the headers.
         file_data = re.split(r"\[DATA\]\n",file_all_data)[1]
         meta_data = re.split(r"\[DATA\]\n",file_all_data)[0]
-        
+        print(meta_data)
         #Extract the time infomation:
-        self.start_time = self.convert_time_to_epoch(meta_data[meta_data.index('Start time')+11:meta_data.index('Start time')+11+19])
+        # self.start_time = self.convert_time_to_epoch(meta_data[meta_data.index('Start time')+11:meta_data.index('Start time')+11+19])
+        self.start_time = self.convert_time_to_epoch(meta_data[meta_data.index('Saved Date')+11:meta_data.index('Saved Date')+11+19])
         
+
         meta_split = meta_data.split('\t')
         #Extract position infomation: 
         self.x_pos = float(meta_data.split('X (m)\t')[1].split('\n')[0][0:-1])

@@ -170,14 +170,14 @@ def calc_force_array (z, df, A, f_0, N):
         forces[i] = F_j(z, df, A, i, f_0, N)
     return forces
 
-def calc_force_trapz (z, df, A, k, f_0):
+def calc_force_trapz (z, df, A, k, f_0, abs_YN = True):
     Omega = df/f_0
     dOmega_dz = np.diff(Omega)/np.diff(z)
 
     z = z[:-1]
     # Delta_f = Delta_f[:-1]
     Omega = Omega[:-1]
-    print(len(z), len(Omega), len(dOmega_dz))
+    # print(len(z), len(Omega), len(dOmega_dz))
     force = np.zeros(len(z) - 2)
     for j in range(len(z) - 2):
         # start at j+1 due to pole at t=z
@@ -187,14 +187,31 @@ def calc_force_trapz (z, df, A, k, f_0):
         Omega_tmp = Omega[j+1:]
         dOmega_dz_tmp = dOmega_dz[j+1:]
         
-        # calculate integral Eq.(9) in [1]
-        integral = np.trapz((1 + np.sqrt(A) / (8 * np.sqrt(np.pi * (t - z[j])))) * Omega_tmp - 
-                        A**(3/2) / np.sqrt(2 * (t - z[j])) * dOmega_dz_tmp, t)
-        
-        # correction terms for t=z from [2]
-        corr1 = Omega[j] * (z[j+1] - z[j])
-        corr2 = 2 * (np.sqrt(A) / (8 * np.sqrt(np.pi))) * Omega[j] * np.sqrt(z[j+1] - z[j])
-        corr3 = (-2) * (A**(3/2) / np.sqrt(2)) * dOmega_dz[j] * np.sqrt(z[j+1] - z[j])
+        # # calculate integral Eq.(9) in [1]
+        # print("testing sqrts 1", (t - z[j]))
+        # print("testing sqrts 2", (t - z[j]))
+
+        ### Abs to stop negative values, added 11:05, 29/10/24
+        # abs_YN = True
+        if abs_YN:
+
+            integral = np.trapz((1 + np.sqrt(A) / (8 * np.sqrt(np.pi * abs(t - z[j])))) * Omega_tmp - 
+                            A**(3/2) / np.sqrt(2 * abs(t - z[j])) * dOmega_dz_tmp, t)
+            
+            # correction terms for t=z from [2]
+            corr1 = Omega[j] * (z[j+1] - z[j])
+            corr2 = 2 * (np.sqrt(A) / (8 * np.sqrt(np.pi))) * Omega[j] * np.sqrt(abs(z[j+1] - z[j]))
+            corr3 = (-2) * (A**(3/2) / np.sqrt(2)) * dOmega_dz[j] * np.sqrt(abs(z[j+1] - z[j]))
+
+        else:
+            integral = np.trapz((1 + np.sqrt(A) / (8 * np.sqrt(np.pi * (t - z[j])))) * Omega_tmp - 
+                            A**(3/2) / np.sqrt(2 * (t - z[j])) * dOmega_dz_tmp, t)
+            
+            # correction terms for t=z from [2]
+            corr1 = Omega[j] * (z[j+1] - z[j])
+            corr2 = 2 * (np.sqrt(A) / (8 * np.sqrt(np.pi))) * Omega[j] * np.sqrt((z[j+1] - z[j]))
+            corr3 = (-2) * (A**(3/2) / np.sqrt(2)) * dOmega_dz[j] * np.sqrt((z[j+1] - z[j]))
+
         
         force[j] = 2 * k * (corr1 + corr2 + corr3 + integral)
     return force

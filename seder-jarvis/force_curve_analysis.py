@@ -4,6 +4,8 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import os
 from spectra_set_analysis import SpectraSet
+# import oct2py
+
 # Load the data
 
     
@@ -71,19 +73,18 @@ def main():
         # print("Z: ",z)
         # print("dF: ",df)
         #reverse the two arrays
-        # z = z[::-1]
-        # df = df[::-1]
+        z = z[::-1]
+        df = df[::-1]
 
 
         output_file_path = r"C:\Users\ppxfc1\OneDrive - The University of Nottingham\Desktop\PhD\Code\PhD-Codes\seder-jarvis\outputed_mathematica_data" + "\\" + spectrum_names[i][:-4] + '_z.txt'
         with open(output_file_path, 'w') as f:
+            # f.write('Z (m) Frequency Shift (Hz) ' + spectrum_names[i] + '\n' )
             for j in range(len(z)):
                 f.write(str(z[j]) + " "+ str(df[j]) +'\n')
+        print(spectrum_names[i])
         forces_trapz = calc_force_trapz(z, df, amplitude, k_spring, frequency_res, abs_YN=False)
-        z = z[0:len(forces_trapz)]
-        forceAx.plot(z, forces_trapz*1e9, label='Python')
-        forceAx.set_xlabel('Z (m)')
-        forceAx.set_ylabel('Force (nN)')
+
 
         mathematica_x = []
         mathematica_force = []
@@ -96,34 +97,38 @@ def main():
                 line = line.split(",")
                 mathematica_x.append(float(line[0]))
                 mathematica_force.append(float(line[1]))
+
+        # oc = oct2py.Oct2Py()
+
+
+        # oc.addpath(r"C:\Users\ppxfc1\OneDrive - The University of Nottingham\Desktop\PhD\Code\PhD-Codes\seder-jarvis")  
+        # oc.eval('sader_run.m')
+
+        matlab_z = []
+        matlab_force = []
+        with open(r"C:\Users\ppxfc1\OneDrive - The University of Nottingham\Desktop\PhD\Code\PhD-Codes\seder-jarvis\matlab_z_f_output.txt") as file:
+            file.readline()
+            for line in file:
+                line = line.split()
+                matlab_z.append(float(line[0]))
+                matlab_force.append(float(line[1]))
+        
+        matlab_z = np.array(matlab_z)
+        matlab_force = np.array(matlab_force)
         mathematica_force = np.array(mathematica_force)
+        z = z[0:len(forces_trapz)]
+
+
+        #Plotting the forces
+        forceAx.plot(z, forces_trapz*1e9, label='Python')
         forceAx.plot(mathematica_x, mathematica_force*1e9, label='Mathematica')
+        forceAx.plot(matlab_z*1e-9, matlab_force, label='Matlab')
+
         # forceAx.set_title(spectrum_names[i])
+        forceAx.set_xlabel('Z (m)')
+        forceAx.set_ylabel('Force (nN)')
         plt.legend()
         plt.show()
-
-
-
-
-
-    # index = spectrum_file.ReadChannel('Index')
-    # df = spectrum_file.ReadChannel('OC M1 Freq. Shift (Hz)')
-
-    # plt.scatter(index, df)
-    # plt.show()
-
-
-    
-   
-    # forces_trapz = calc_force_trapz(z, df, amplitude, k_spring, frequency_res)
-    
-
-
-    # print(len(forces_trapz), len(z))
-    # z = z[0:len(forces_trapz)]
-    # plt.plot(z, forces_trapz)
-    # plt.show()
-
 
 if __name__ == "__main__":
     main()

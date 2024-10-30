@@ -22,7 +22,7 @@ function [F, z, Delta_f]=saderF(z, Delta_f, f_0, k, A)
 %       in frequency modulation force spectroscopy"
 %       Applied Physics Letters, 84, 1801-1803 (2004)  
 %   [2] J. E. Sader and S. P. Jarvis
-%       Mathematica® notebook for implementation of formulas 
+%       Mathematicaï¿½ notebook for implementation of formulas 
 %       http://www.ampc.ms.unimelb.edu.au/afm/bibliography.html#FMAFM. 
 %
 %   Copyright 2011 Joachim Welker, Esther Illek, Franz J. Giessibl 
@@ -53,12 +53,19 @@ for j=1:(numel(z)-2)
     dOmega_dz_tmp=dOmega_dz(j+1:end);     
     
     % calculate integral Eq.(9) in [1]
-    integral=trapz(t, (1+sqrt(A)./(8*sqrt(pi*(t-z(j))))).*Omega_tmp-A^(3/2)./sqrt(2*(t-z(j))).*dOmega_dz_tmp);
+    inner = (1+sqrt(A)./(8*sqrt(pi*(t-z(j))))).*Omega_tmp-A^(3/2)./sqrt(2*(t-z(j))).*dOmega_dz_tmp;
+    integral=trapz(t, inner);
                 
     % correction terms for t=z from [2]
     corr1 = Omega(j)*(z(j+1)-z(j));                                   
     corr2 = 2*(sqrt(A)/(8*sqrt(pi))) * Omega(j) * sqrt(z(j+1)-z(j)); 
     corr3 = (-2)*(sqrt(A)^3/sqrt(2)) * dOmega_dz(j) * sqrt(z(j+1)-z(j));
+    if mod(j, 15)==0
+
+        display(['j = ', num2str(j), mat2str(Omega_tmp)])
+
+        % display(['j = ', num2str(j), ' of ', num2str(corr1), ' ', num2str(corr2), ' ', num2str(corr3), ' ', num2str(integral)]); 
+    end
     F(j)=2*k*(corr1+corr2+corr3+integral); 
 end
 

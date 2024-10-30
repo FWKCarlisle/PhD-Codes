@@ -204,8 +204,10 @@ def calc_force_trapz (z, df, A, k, f_0, abs_YN = True):
             corr3 = (-2) * (A**(3/2) / np.sqrt(2)) * dOmega_dz[j] * np.sqrt(abs(z[j+1] - z[j]))
 
         else:
-            integral = np.trapz((1 + np.sqrt(A) / (8 * np.sqrt(np.pi * (t - z[j])))) * Omega_tmp - 
-                            A**(3/2) / np.sqrt(2 * (t - z[j])) * dOmega_dz_tmp, t)
+            
+            inner = (1 + np.sqrt(A) / (8 * np.sqrt(np.pi * (t - z[j])))) * Omega_tmp - A**(3/2) / np.sqrt(2 * (t - z[j])) * dOmega_dz_tmp
+        
+            integral = np.trapz(inner, t)
             
             # correction terms for t=z from [2]
             corr1 = Omega[j] * (z[j+1] - z[j])
@@ -213,6 +215,11 @@ def calc_force_trapz (z, df, A, k, f_0, abs_YN = True):
             corr3 = (-2) * (A**(3/2) / np.sqrt(2)) * dOmega_dz[j] * np.sqrt((z[j+1] - z[j]))
 
         
+        #### THIS IS ALL DEBUG TESTING TO FIND OUT WHAT IS DIFFERENT BETWEEN PY AND MATLAB
+        if j%15 == 0:
+            print("j=",j, " Inner first = ", Omega_tmp)
+            # print("j =", j, "of" , corr1, " ",  corr2, " ", corr3," ", integral) 
+
         force[j] = 2 * k * (corr1 + corr2 + corr3 + integral)
     return force
 # and read the data

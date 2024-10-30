@@ -21,5 +21,40 @@ k = 2000;
 f_0 = 20000;
 
 [f, z , delta_f] = saderF(z, delta_f, f_0, k, A);
-display(f)
+% display(f)
+
+% Assuming z and f are already defined
+% display(f)
+
+% Specify the output filename
+output_filename = 'C:\Users\ppxfc1\OneDrive - The University of Nottingham\Desktop\PhD\Code\PhD-Codes\seder-jarvis\matlab_z_f_output.txt';
+
+% Open the file for writing
+output_fileID = fopen(output_filename, 'w');
+
+% Check if the file opened successfully
+if output_fileID == -1
+    error('Output file could not be opened');
+else
+    disp(['File opened successfully: ', output_filename]);
+end
+
+% Write header
+fprintf(output_fileID, 'z f * 1e9 \n');
+
+% Write data
+for i = 1:length(z)
+    fprintf(output_fileID, '%f %f\n', real(z(i)), real(f(i)));
+end
+
+% Close the file
+fclose(output_fileID);
+
+% Confirm file writing
+disp(['Data written to file: ', output_filename]);
+
+% Plot the data
 plot(z, f, 'o');
+title('z vs f');
+xlabel('z');
+ylabel('f');

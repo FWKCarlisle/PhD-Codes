@@ -171,6 +171,7 @@ def calc_force_array (z, df, A, f_0, N):
     return forces
 
 def calc_force_trapz (z, df, A, k, f_0, abs_YN = True):
+    print(f_0)
     Omega = df/f_0
     dOmega_dz = np.diff(Omega)/np.diff(z)
 
@@ -179,6 +180,7 @@ def calc_force_trapz (z, df, A, k, f_0, abs_YN = True):
     Omega = Omega[:-1]
     # print(len(z), len(Omega), len(dOmega_dz))
     force = np.zeros(len(z) - 2)
+    # print("Omega ", Omega)
     for j in range(len(z) - 2):
         # start at j+1 due to pole at t=z
         t = z[j+1:]
@@ -216,8 +218,8 @@ def calc_force_trapz (z, df, A, k, f_0, abs_YN = True):
 
         
         #### THIS IS ALL DEBUG TESTING TO FIND OUT WHAT IS DIFFERENT BETWEEN PY AND MATLAB
-        if j%15 == 0:
-            print("j=",j, " Inner first = ", Omega_tmp)
+        # if j%15 == 0:
+            # print("j=",j, " Inner first = ", Omega_tmp)
             # print("j =", j, "of" , corr1, " ",  corr2, " ", corr3," ", integral) 
 
         force[j] = 2 * k * (corr1 + corr2 + corr3 + integral)

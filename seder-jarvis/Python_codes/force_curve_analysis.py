@@ -19,7 +19,7 @@ def main():
 
     amplitude = 1e-10 #in pm
     k_spring = 2000 #in N/m
-    frequency_res = 10000 #in Hz
+    frequency_res = 20000 #in Hz
     
     
     file_name = 'Z-Spectroscopy_BP_00184.dat'

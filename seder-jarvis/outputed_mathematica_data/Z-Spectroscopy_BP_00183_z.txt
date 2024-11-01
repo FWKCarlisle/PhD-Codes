@@ -1,4 +1,3 @@
-Z (m) Frequency Shift (Hz) Z-Spectroscopy_BP_00183.dat
 0.0 -1.3263491
 2.5000002e-12 -1.2773963
 5.0000004e-12 -1.2690005

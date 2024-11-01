@@ -34,6 +34,8 @@ function [F, z, Delta_f]=saderF(z, Delta_f, f_0, k, A)
 %
 
 % reduced frequency shift Omega
+display(f_0)
+% display(Delta_f)
 Omega=Delta_f/f_0; 
 
 % derivative of the reduced frequency shift dOmega_dz
@@ -43,7 +45,7 @@ dOmega_dz=diff(Omega)./diff(z);
 z=z(1:end-1);
 Delta_f=Delta_f(1:end-1); 
 Omega=Omega(1:end-1); 
-
+% display(Omega)
 for j=1:(numel(z)-2) 
     % start at j+1 due to pole at t=z
     t=z(j+1:end);  
@@ -62,7 +64,7 @@ for j=1:(numel(z)-2)
     corr3 = (-2)*(sqrt(A)^3/sqrt(2)) * dOmega_dz(j) * sqrt(z(j+1)-z(j));
     if mod(j, 15)==0
 
-        display(['j = ', num2str(j), mat2str(Omega_tmp)])
+        % display(['j = ', num2str(j), mat2str(Omega_tmp)])
 
         % display(['j = ', num2str(j), ' of ', num2str(corr1), ' ', num2str(corr2), ' ', num2str(corr3), ' ', num2str(integral)]); 
     end

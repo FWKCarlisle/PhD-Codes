@@ -34,7 +34,7 @@ function [F, z, Delta_f]=saderF(z, Delta_f, f_0, k, A)
 %
 
 % reduced frequency shift Omega
-display(f_0)
+% display(f_0)
 % display(Delta_f)
 Omega=Delta_f/f_0; 
 
@@ -76,6 +76,8 @@ z=z(1:numel(F));
 
 % rearrange deconvoluted force to fit input values
 F=F';
+
+display(F)
 
 
 

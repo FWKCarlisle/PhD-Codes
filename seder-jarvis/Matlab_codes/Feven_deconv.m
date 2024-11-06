@@ -49,12 +49,15 @@ function [zFeven, Feven] = Feven_deconv(zk, ktscap, A0, sgwin, sgdegree, tozero)
   
   % calculate the derivation
   if( (sgwin>1) && (sgdegree>=1) && (sgwin>sgdegree) && mod(sgwin,2)>0 ) 
-    [~, ddfdz] = savgolfilter(zk, ktscap, sgwin, 1, sgdegree);
+    % [~, ddfdz] = savgolfilter(zk, ktscap, sgwin, 1, sgdegree);
+    ddfdz = sgolayfilt(ktscap, 2, sgwin);
+
     % TODO: Filter ideally improves data, but following line seems to scale
     % the resulting data incorrectly
     %ktscap     = savgolfilter(zk, ktscap, sgwin, 0, sgdegree);
     
     % central differentiation for z (left/right diff for edges)
+    % ddfdz = ktscap.*0;
     ddz = zk.*0;
     ddz(1)       = zk(2)-zk(1);
     ddz(2:end-1) = (zk(3:end) - zk(1:end-2))/2.;
@@ -106,6 +109,5 @@ function [zFeven, Feven] = Feven_deconv(zk, ktscap, A0, sgwin, sgdegree, tozero)
 
 
 end
-
 
 

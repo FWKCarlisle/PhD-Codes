@@ -170,7 +170,7 @@ def calc_force_array (z, df, A, f_0, N):
         forces[i] = F_j(z, df, A, i, f_0, N)
     return forces
 
-def calc_force_trapz (z, df, A, k, f_0, abs_YN = True):
+def calc_force_trapz (z, df, A, k, f_0, abs_YN = False):
     print(f_0)
     Omega = df/f_0
     dOmega_dz = np.diff(Omega)/np.diff(z)

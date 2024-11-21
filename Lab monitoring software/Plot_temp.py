@@ -27,7 +27,8 @@ def update_graph(update_rate=500, data_list_len=500, graph_type="Scatter", count
     ser.write('KRDG? A\r\n'.encode())
     read_pressure_data = ser.readline()
     test = read_pressure_data.decode()
-    new_value=float(test[:-2])
+    print(test)
+    # new_value=float(test[:-2])
     tempreading = "T_Cryo = "+test[:-2]+" K"
     
     data.append(new_value) #add new value to the graphing list

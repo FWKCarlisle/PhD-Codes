@@ -18,10 +18,14 @@ class MatplotlibWidget(FigureCanvas):
         if parent is not None:
             self.setParent(parent)
 
-    def plot_graph(self, x, y, title, xlabel, ylabel, data_label):
+    def plot_graph(self, x, y, title, xlabel, ylabel, data_label, type = 'Scatter'):
         # Plot a simple graph
         self.ax.clear()
-        self.ax.scatter(x, y, label=data_label)
+        if type == 'Line':
+            self.ax.plot(x, y, label=data_label)
+        else:
+            self.ax.scatter(x, y, label=data_label)
+        
         self.ax.legend()
         self.ax.set_title(title)
         self.ax.set_xlabel(xlabel)

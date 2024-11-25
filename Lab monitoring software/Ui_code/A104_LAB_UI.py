@@ -3,7 +3,7 @@ import matplotlib as plt
 import time
 
 import sys
-from PyQt5.QtWidgets import QApplication, QMainWindow, QLabel, QVBoxLayout,QHBoxLayout, QPushButton, QWidget, QLineEdit, QTextEdit
+from PyQt5.QtWidgets import QApplication,QComboBox, QMainWindow, QLabel, QVBoxLayout,QHBoxLayout, QPushButton, QWidget, QLineEdit, QTextEdit
 from PyQt5.QtCore import Qt, QTimer
 from matplotlib.backends.backend_qt5agg import (
     FigureCanvasQTAgg as FigureCanvas,
@@ -21,7 +21,8 @@ class MainWindow(QMainWindow):
         self.time = []
 
         self.data_list_len = 300
-        self.refresh_rate = 1000
+        self.refresh_rate = 300
+        self.graph_type = 'scatter'
 
 
         self.setWindowTitle("PyQt5: Graph with Input Boxes")
@@ -52,6 +53,15 @@ class MainWindow(QMainWindow):
         label_layout.addWidget(label1)
         label_layout.addWidget(self.num_points)
 
+        label1 = QLabel("Graph type:")
+        self.type_box = QComboBox()
+        self.type_box.addItem("Scatter")
+        self.type_box.addItem("Line")
+        label_layout.addWidget(label1)
+        label_layout.addWidget(self.type_box)
+
+
+
         # Add a button
         button = QPushButton("Update graph settings", self)
         button.clicked.connect(self.update_graph_settings)
@@ -73,10 +83,9 @@ class MainWindow(QMainWindow):
     
     def update_graph_settings(self):
         print("Updating graph settings")
-        print(self.rate_label.text(), type(self.rate_label.text()), int(self.rate_label.text()))
-        print(self.num_points.text(), type(self.num_points.text()), int(self.num_points.text()))
         self.data_list_len = int(self.num_points.text())
         self.timer.setInterval(int(self.rate_label.text()))
+        self.graph_type = self.type_box.currentText()
         self.data = self.data[-self.data_list_len:] #set the data to the list length
         self.time = self.time[-self.data_list_len:]
 
@@ -91,7 +100,7 @@ class MainWindow(QMainWindow):
 
     def update_graph(self):
         self.update_data()
-        self.canvas.plot_graph(self.time, self.data, "Rand data over time", "Time", "Data", "Random Data")
+        self.canvas.plot_graph(self.time, self.data, "Rand data over time", "Time", "Data", "Random Data", self.graph_type)
 
     def on_button_click(self):
         self.label.setText("Button Clicked!")

@@ -1,15 +1,42 @@
 import numpy as np
-import matplotlib as plt
+import matplotlib.pyplot as plt
 import time
 
 import sys
-from PyQt5.QtWidgets import QApplication,QComboBox, QMainWindow, QLabel, QVBoxLayout,QHBoxLayout, QPushButton, QWidget, QLineEdit, QTextEdit
-from PyQt5.QtCore import Qt, QTimer
+from PyQt5.QtWidgets import (
+    QApplication,QComboBox, QMainWindow,
+    QLabel, QVBoxLayout,QHBoxLayout, 
+    QPushButton, QWidget, QLineEdit,
+)
+from PyQt5.QtCore import QTimer
 from matplotlib.backends.backend_qt5agg import (
     FigureCanvasQTAgg as FigureCanvas,
-    NavigationToolbar2QT as NavigationToolbar,
 )
-from pyqt_windows import MatplotlibWidget
+
+class MatplotlibWidget(FigureCanvas):
+    def __init__(self, parent=None):
+        # Create a Matplotlib figure
+        self.fig, self.ax = plt.subplots()
+        super().__init__(self.fig)
+
+        # Optional: Set parent widget
+        if parent is not None:
+            self.setParent(parent)
+
+    def plot_graph(self, x, y, title, xlabel, ylabel, data_label, type = 'Scatter'):
+        # Plot a simple graph
+        self.ax.clear()
+        if type == 'Line':
+            self.ax.plot(x, y, label=data_label)
+        else:
+            self.ax.scatter(x, y, label=data_label)
+        
+        self.ax.legend()
+        self.ax.set_title(title)
+        self.ax.set_xlabel(xlabel)
+        self.ax.set_ylabel(ylabel)
+        self.draw()
+
 
 class MainWindow(QMainWindow):
     def __init__(self):

@@ -67,7 +67,13 @@ class MainWindow(QMainWindow):
         main_layout.addWidget(self.canvas, stretch=3)  # Stretch to allocate space
 
         # Add a label
+
+
+
         label_layout = QVBoxLayout()
+
+        self.temp_label = QLabel("Temperature: K")
+        label_layout.addWidget(self.temp_label)
 
         # Label and input box 1
         label1 = QLabel("Refresh rate (ms):")
@@ -128,7 +134,7 @@ class MainWindow(QMainWindow):
     def update_graph(self):
         self.update_data()
         self.canvas.plot_graph(self.time, self.data, "Rand data over time", "Time", "Data", "Random Data", self.graph_type)
-
+        self.temp_label.setText(f"Temperature: {self.data[-1]} K")
     def on_button_click(self):
         self.label.setText("Button Clicked!")
 

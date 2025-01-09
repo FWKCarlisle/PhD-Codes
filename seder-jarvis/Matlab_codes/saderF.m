@@ -77,7 +77,8 @@ z=z(1:numel(F));
 % rearrange deconvoluted force to fit input values
 F=F';
 
-display(F)
+%show last value of force
+% display(F(end))
 
 
 

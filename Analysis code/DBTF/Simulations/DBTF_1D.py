@@ -87,49 +87,73 @@ def random_number_generator():
     return random_num
 
 def move_dbtf(dbtf, grid_size=16):
-
-    translations = dbtf.find_translations()
     transition = random_number_generator()
     direction = random_number_generator()
-    
-    # print(f"Transition: {transition},  {dbtf.rate_translation_x/dbtf.total_rate}, {(dbtf.rate_translation_x + dbtf.rate_translation_y)/dbtf.total_rate}")
 
-    if transition < dbtf.rate_translation_x/dbtf.total_rate:
+    # Probabilistic choice between x and y movement
+    if transition < dbtf.rate_translation_x / dbtf.total_rate:
         print("X movement")
-        if direction < 0.5:
-            dbtf.position[0] -= 1
-        else:
-            dbtf.position[0] += 1
-        
-        
-    elif transition < (dbtf.rate_translation_x + dbtf.rate_translation_y)/dbtf.total_rate:
+        step = dbtf.trans_step_size if direction >= 0.5 else -dbtf.trans_step_size
+
+        # Rotate x movement based on angle
+        dx = step * np.cos(np.radians(dbtf.angle))
+        dy = step * np.sin(np.radians(dbtf.angle))
+
+    elif transition < (dbtf.rate_translation_x + dbtf.rate_translation_y) / dbtf.total_rate:
         print("Y movement")
-        if direction < 0.5:
-            dbtf.position[1] -= 1
-        else:
-            dbtf.position[1] += 1
+        step = dbtf.trans_step_size if direction >= 0.5 else -dbtf.trans_step_size
+
+        # Rotate y movement based on angle (perpendicular to x)
+        dx = -step * np.sin(np.radians(dbtf.angle))
+        dy = step * np.cos(np.radians(dbtf.angle))
+
     else:
-        print("rotation")
+        print("Rotation")
         if direction < 0.5:
             dbtf.angle -= dbtf.rot_step_size
         else:
             dbtf.angle += dbtf.rot_step_size
+        return  # No translation if rotation occurs
 
+    # Update position
+    dbtf.position[0] += dx
+    dbtf.position[1] += dy
+
+    # Keep the box within bounds
     if dbtf.position[0] > grid_size or dbtf.position[0] < -grid_size:
         dbtf.position[0] = -dbtf.position[0]
     if dbtf.position[1] > grid_size or dbtf.position[1] < -grid_size:
         dbtf.position[1] = -dbtf.position[1]
 
-
-
     return 0
 
+def generate_hexagonal_lattice(grid_size, a=1):
+    """
+    Generate a hexagonal lattice of points within a given grid size.
+    
+    Args:
+        grid_size: Number of rows and columns to generate.
+        a: Spacing between adjacent points.
+    
+    Returns:
+        A list of (x, y) tuples representing the hexagonal lattice points.
+    """
+    lattice = []
+    for i in range(-grid_size, grid_size + 1):
+        for j in range(-grid_size, grid_size + 1):
+            x = i * a
+            y = j * a * np.sqrt(3) / 2
+            if j % 2 != 0:  # Offset for staggered rows
+                x += a / 2
+            lattice.append((x, y))
+    return lattice
 
 
 
 def main():
     grid_length = 16
     time = 0
+    time_limit = 100
     dbtf = DBTF_1D()
 
     positions_x = [dbtf.position[0]]
@@ -139,6 +163,11 @@ def main():
 
     def update(frame):
         nonlocal time, colourbar_added
+
+        if time >= time_limit:
+            ani.event_source.stop()  # Stop the animation when the time limit is reached
+            return
+
         total_rate = dbtf.total_rate
 
         # Calculate delta_time
@@ -154,6 +183,7 @@ def main():
         times.append(time)
 
         # Clear the plot and redraw
+        
         ax.clear()
         ax.set_xlim(-grid_length, grid_length)
         ax.set_ylim(-grid_length, grid_length)
@@ -168,6 +198,8 @@ def main():
             edgecolor="k",
             s=50  # Marker size
         )
+
+
 
         # Add a colorbar to indicate time
         if not colourbar_added:
@@ -193,7 +225,7 @@ def main():
 
     # Set up the plot
     fig, ax = plt.subplots()
-    ani = FuncAnimation(fig, update, frames=100, repeat=False)
+    ani = FuncAnimation(fig, update, frames=np.arange(1000000), repeat=False)
     plt.show()
 
     

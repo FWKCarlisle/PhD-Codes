@@ -15,6 +15,22 @@ images = nexus['/entry/medipix/data']
 # nexusformat.nexus.tree.NeXusError: Use slabs to access data larger than NX_MEMORY=2000 MBmages[2999], cmap='gray')
 # plt.show()
 
-for i, image in enumerate(images):
-    imageio.imwrite(rf'C:\Users\ppxfc1\OneDrive - The University of Nottingham\Desktop\PhD\CrCl3\HOPG\7050\image_{i:04d}.png', image)
+slab_size = 100  # Adjust this size based on your memory capacity
 
+# Process images in slabs
+num_images = images.shape[0]
+for start in range(0, 2*slab_size, slab_size):
+    end = min(start + slab_size, num_images)
+    slab = images[start:end]
+    print(f'Processing images {start} to {end}')
+    for i, image in enumerate(slab):
+        image_index = start + i
+
+        # normalized_image = (255 * (image - np.min(image)) / (np.max(image) - np.min(image))).astype(np.uint8)
+        normalized_image = image.astype(np.uint8)
+
+
+        imageio.imwrite(rf'C:\Users\ppxfc1\OneDrive - The University of Nottingham\Desktop\PhD\CrCl3\HOPG\7050\image_{image_index:04d}.png', normalized_image)
+        if i == 99:
+            plt.imshow(image, cmap='gray')
+            plt.show()

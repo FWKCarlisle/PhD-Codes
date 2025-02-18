@@ -35,8 +35,8 @@ def save_images(images, save_path=rf"C:\Users\ppxfc1\OneDrive - The University o
         for i, image in enumerate(slab):
             image_index = start + i
 
-            image = (255 * (image - np.min(image)) / (np.max(image) - np.min(image)))
-            image = image.astype(np.uint8)
+            # image = (255 * (image - np.min(image)) / (np.max(image) - np.min(image)))
+            # image = image.astype(np.uint8)        
 
             pil_image = Image.fromarray(image)
 

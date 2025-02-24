@@ -3,11 +3,10 @@ import numpy as np
 from nexusformat.nexus import nxload
 import imageio
 from PIL import Image, ImageDraw, ImageFont
- 
-# Opening the test image, and saving it's object
 
 
-number = 7035
+
+number = 7046
 path = rf"C:\Users\ppxfc1\OneDrive - The University of Nottingham\Desktop\PhD\CrCl3\mm38550-2\i06-2-{number}.nxs"
 
 
@@ -18,11 +17,7 @@ def grab_images(path):
     images = nexus['/entry/medipix/data']
     return images
 
-def calculate_average_brightness(image):
-    return np.mean(image)
-
-
-def save_images(images, save_path=rf"C:\Users\ppxfc1\OneDrive - The University of Nottingham\Desktop\PhD\CrCl3\HOPG\7029"):
+def save_images(images, save_path=rf"C:\Users\ppxfc1\OneDrive - The University of Nottingham\Desktop\PhD\CrCl3\HOPG\7046"):
 
     slab_size = 100  # Adjust this size based on your memory capacity
     brightneses = []  
@@ -44,13 +39,10 @@ def save_images(images, save_path=rf"C:\Users\ppxfc1\OneDrive - The University o
             new_image = Image.new('RGB', (pil_image.width, pil_image.height + 50), (255, 255, 255))
             new_image.paste(pil_image, (0, 0))
 
-            brightness = calculate_average_brightness(new_image)
-            brightneses.append(brightness)
-            # print("brightness: ",brightness)
-            # Draw the text box
+            
             draw = ImageDraw.Draw(new_image)
             font = ImageFont.load_default()
-            text = f"Image {image_index}, brightness: {brightness:.2f}"
+            text = f"Image {image_index}"
             text_bbox = draw.textbbox((0, 0), text, font=font)
             text_width, text_height = text_bbox[2] - text_bbox[0], text_bbox[3] - text_bbox[1]
             text_position = ((new_image.width - text_width) // 2, pil_image.height + (50 - text_height) // 2)
@@ -58,15 +50,5 @@ def save_images(images, save_path=rf"C:\Users\ppxfc1\OneDrive - The University o
 
 
             imageio.imwrite(rf'{save_path}\image_{image_index:04d}.png', new_image)
-        # if i == 99:
-        #     plt.imshow(new_image, cmap='gray')
-        #     plt.show()
-    return brightneses
-
-
-brightnes = save_images(grab_images(path))
-plt.plot(np.arange(len(brightnes)), brightnes)
-plt.xlabel("Image number")
-plt.ylabel("Brightness")
-plt.show()
-print("finished making images")
+       
+    return images

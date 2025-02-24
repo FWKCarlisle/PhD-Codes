@@ -11,7 +11,7 @@ import numpy as np
 
 
 
-def make_movie(dirname: Path, duration: int = 50, gif_name: str = "made_gif.mp4", invert: bool = False, threshold: bool =True):
+def make_movie(dirname: Path, duration: int = 50, gif_name: str = "made_gif.mp4", invert: bool = False, threshold: bool =False) -> Path:
     """
     Creates a gif based off a set of given .pngs.  It is important to note that the only
     accepted filetype is .png, although this is planned to be expanded in later updates.
@@ -57,27 +57,34 @@ def make_movie(dirname: Path, duration: int = 50, gif_name: str = "made_gif.mp4"
 
 
     with imageio.get_writer(output, mode="I", fps=60) as writer:
-        for filename in images:
-            img = Image.open(filename)
+        for i, filename in enumerate(images):
+            image = Image.open(filename)
+            if i == 0:
+                    print("Thresholding the image so that only the dark spots are visable.")
+                    print("This is done by setting values below a certain threshold to 0.")
+                    print("If you do not want this, set threshold = False")
+
+                    background = image
+
+            image_np = np.array(image) / np.max(background)      
             if invert:
 
                 # Passing the image object to invert()  
-                inv_img = ImageChops.invert(img)
-                image = np.array(inv_img)
+                inv_img = ImageChops.invert(image)
+                image_np = np.array(inv_img)
                 # image = imageio.imread(inv_img)
             if threshold:
-
-                ### Thresholding the image so that only the dark spots are visable.
-                threshold = 50 ##percentage of the maximum value
-
-                image = np.array(image)
-                image = image.astype(np.uint8)
-                image = np.where(image < (0.5*np.max(image)), 0, image)
                 
+                ### Thresholding the image so that only the dark spots are visable.
+                
+                threshold_value = 50  # percentage of the maximum value
+                max_value = np.max(image_np)
+                image_np[image_np < (threshold_value / 100) * max_value] = 0
+
             else:
-                image = imageio.imread(filename)
+                image_np = imageio.imread(filename)
             
-            writer.append_data(image)
+            writer.append_data(image_np)
 
     return output
 
@@ -99,7 +106,7 @@ def make_gif_options( directory=None, name="made_gif.gif", pop_up=True,invert = 
     print(f"finished making gif of name {name}")
 
 if __name__ == "__main__":
-    directory = "C:/Users/ppxfc1/OneDrive - The University of Nottingham/Desktop/PhD/CrCl3/HOPG/7050"
+    directory = "C:/Users/ppxfc1/OneDrive - The University of Nottingham/Desktop/PhD/CrCl3/HOPG/7029"
     name = "made_gif.mp4"
-    make_gif_options( directory=directory, name=name, pop_up=False,invert=True)
+    make_gif_options( directory=directory, name=name, pop_up=False,invert=False)
 

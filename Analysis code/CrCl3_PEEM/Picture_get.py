@@ -7,7 +7,7 @@ from PIL import Image, ImageDraw, ImageFont
 # Opening the test image, and saving it's object
 
 
-number = 7035
+number = 7054
 path = rf"C:\Users\ppxfc1\OneDrive - The University of Nottingham\Desktop\PhD\CrCl3\mm38550-2\i06-2-{number}.nxs"
 
 
@@ -22,7 +22,7 @@ def calculate_average_brightness(image):
     return np.mean(image)
 
 
-def save_images(images, save_path=rf"C:\Users\ppxfc1\OneDrive - The University of Nottingham\Desktop\PhD\CrCl3\HOPG\7029"):
+def save_images(images, save_path=rf"C:\Users\ppxfc1\OneDrive - The University of Nottingham\Desktop\PhD\CrCl3\HOPG\7054"):
 
     slab_size = 100  # Adjust this size based on your memory capacity
     brightneses = []  
@@ -33,6 +33,7 @@ def save_images(images, save_path=rf"C:\Users\ppxfc1\OneDrive - The University o
         slab = images[start:end]
         print(f'Processing images {start} to {end}')
         for i, image in enumerate(slab):
+
             image_index = start + i
 
             # image = (255 * (image - np.min(image)) / (np.max(image) - np.min(image)))
@@ -46,6 +47,7 @@ def save_images(images, save_path=rf"C:\Users\ppxfc1\OneDrive - The University o
 
             brightness = calculate_average_brightness(new_image)
             brightneses.append(brightness)
+
             # print("brightness: ",brightness)
             # Draw the text box
             draw = ImageDraw.Draw(new_image)

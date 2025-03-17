@@ -247,12 +247,12 @@ def make_movie(dirname: Path, FPS: int = 30, gif_name: str = "made_gif.mp4", inv
             if save_images:
                 # imageio.imwrite(rf'{dirname}\gif_images\image_{i:04d}.png', contour_img)
                 cv2.imwrite(rf'{dirname}\gif_images\image_{i:04d}.png', contour_img)
-                # Image.open(rf'{dirname}\gif_images\image_{i:04d}.png').save(rf'{dirname}\gif_images\image_{i:04d}.pdf')
+                Image.open(rf'{dirname}\gif_images\image_{i:04d}.png').save(rf'{dirname}\gif_images\image_{i:04d}.pdf')
 
     fig, [ax1, ax2] = plt.subplots(2, 1, figsize=(10, 10))
 
     plotting = np.arange(lower_bound, upper_bound+1,1)
-    ax1.plot(plotting, images)
+    ax1.plot(plotting, islands)
     ax1.set_title("Coverage")
     # ax1.set_xlabel("Image number")
     ax1.set_ylabel("Coverage (%)")
@@ -295,4 +295,4 @@ if __name__ == "__main__":
     directory = "C:/Users/ppxfc1/OneDrive - The University of Nottingham/Desktop/PhD/CrCl3/HOPG/7054"
 
     name = "made_gif.mp4"
-    make_gif_options( directory=directory, name=name, pop_up=False,invert=True, threshold=70, save_images=True, contour=True)
+    make_gif_options( directory=directory, name=name, pop_up=False,invert=False, threshold=None, save_images=True, contour=False)

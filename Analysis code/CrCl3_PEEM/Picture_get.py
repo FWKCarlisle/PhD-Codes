@@ -7,10 +7,10 @@ from PIL import Image, ImageDraw, ImageFont
 # Opening the test image, and saving it's object
 
 
-number = 7054
-type = "HOPG" 
-# type = "SiC"
-path = rf"C:\Users\ppxfc1\OneDrive - The University of Nottingham\Desktop\PhD\CrCl3\mm38550-2\i06-2-{number}.nxs"
+number = 6671 #next
+# type = "HOPG" 
+type = "SiC"
+path = rf"C:\Users\ppxfc1\OneDrive - The University of Nottingham\Desktop\PhD\CrCl3\mm38550-1\i06-2-{number}.nxs"
 save_path = rf"C:\Users\ppxfc1\OneDrive - The University of Nottingham\Desktop\PhD\CrCl3\{type}\{number}"
 
 

@@ -7,9 +7,9 @@ from PIL import Image, ImageDraw, ImageFont
 # Opening the test image, and saving it's object
 
 
-number = 6762
-# type = "HOPG" 
-type = "SiC"
+number = 7054
+type = "HOPG" 
+# type = "SiC"
 path = rf"C:\Users\ppxfc1\OneDrive - The University of Nottingham\Desktop\PhD\CrCl3\mm38550-2\i06-2-{number}.nxs"
 save_path = rf"C:\Users\ppxfc1\OneDrive - The University of Nottingham\Desktop\PhD\CrCl3\{type}\{number}"
 
@@ -53,13 +53,13 @@ def save_images(images, save_path=rf"C:\Users\ppxfc1\OneDrive - The University o
 
             # print("brightness: ",brightness)
             # Draw the text box
-            # draw = ImageDraw.Draw(new_image)
-            # font = ImageFont.load_default()
-            # text = f"Image {image_index}, brightness: {brightness:.2f}"
-            # text_bbox = draw.textbbox((0, 0), text, font=font)
-            # text_width, text_height = text_bbox[2] - text_bbox[0], text_bbox[3] - text_bbox[1]
-            # text_position = ((new_image.width - text_width) // 2, pil_image.height + (50 - text_height) // 2)
-            # draw.text(text_position, text, fill="black", font=font)
+            draw = ImageDraw.Draw(new_image)
+            font = ImageFont.load_default()
+            text = f"Image {image_index}, brightness: {brightness:.2f}"
+            text_bbox = draw.textbbox((0, 0), text, font=font)
+            text_width, text_height = text_bbox[2] - text_bbox[0], text_bbox[3] - text_bbox[1]
+            text_position = ((new_image.width - text_width) // 2, pil_image.height + (50 - text_height) // 2)
+            draw.text(text_position, text, fill="black", font=font)
 
 
             imageio.imwrite(rf'{save_path}\image_{image_index:04d}.png', new_image)

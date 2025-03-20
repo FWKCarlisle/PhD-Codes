@@ -46,7 +46,7 @@ def find_islands(image_np, show_img = False, line_y = 513):
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
     # Apply thresholding
-    _, binary = cv2.threshold(gray, 180, 255, cv2.THRESH_BINARY_INV)  # Adjust if needed, change 180 to the threshold value for brightness
+    _, binary = cv2.threshold(gray, 125, 255, cv2.THRESH_BINARY_INV)  # Adjust if needed, change 180 to the threshold value for brightness
 
     # Remove small noise using morphological operations (optional)
     kernel = np.ones((3, 3), np.uint8)
@@ -72,7 +72,7 @@ def find_islands(image_np, show_img = False, line_y = 513):
 
     # Remove the largest contour (assumed to be the background)
     if len(filtered_contours) > 1:
-        filtered_contours = filtered_contours[1:]  # Keep all but the largest
+        filtered_contours = filtered_contours[3:]  # Keep all but the largest
 
     # Define alternating colors for filling
     colors = [(255, 0, 0), (0, 255, 0), (0, 0, 255), (255, 255, 0), (255, 165, 0)]  # Red, Green, Blue, Yellow, Orange
@@ -101,11 +101,15 @@ def find_islands(image_np, show_img = False, line_y = 513):
 
     # Compute and print average island area
     if areas:
-        avg_area = sum(areas) / len(areas)
+        if len(areas) != 0:
+            # print(f"\n{len(areas)} valid islands detected.")
+            avg_area = sum(areas) / len(areas)
         # print(f"\nAverage Island Area: {avg_area:.2f} pixels")
     else:
-        print("\nNo valid islands detected.")
+        # print("\nNo valid islands detected.")
         num_islands = 0
+        areas = []
+        perimeters = []
 
     # Show the image with filled islands
     if show_img:
@@ -118,7 +122,7 @@ def find_islands(image_np, show_img = False, line_y = 513):
     return image, areas, perimeters # Return the image and average area
 
 
-def make_movie(dirname: Path, FPS: int = 30, gif_name: str = "made_gif.mp4", invert: bool = False, threshold: int =170, save_images: bool = True, contour: bool = True) -> Path:
+def make_movie(dirname: Path, FPS: int = 20, gif_name: str = "made_gif.mp4", invert: bool = False, threshold: int =170, save_images: bool = True, contour: bool = True) -> Path:
     """
     Creates a gif based off a set of given .pngs.  It is important to note that the only
     accepted filetype is .png, although this is planned to be expanded in later updates.
@@ -166,10 +170,11 @@ def make_movie(dirname: Path, FPS: int = 30, gif_name: str = "made_gif.mp4", inv
     coverages = []
     islands = []
     compactnesses = []
+    list_num = []
     first_img = True
 
-    lower_bound = 1000
-    upper_bound = 2500
+    lower_bound = 0
+    upper_bound = 3000
 
     with imageio.get_writer(output, mode="I", fps=FPS) as writer:
         for i, filename in enumerate(images):
@@ -184,9 +189,10 @@ def make_movie(dirname: Path, FPS: int = 30, gif_name: str = "made_gif.mp4", inv
                 continue
 
             
-            image_np = np.array(image)   
-
-            if i > 600 and first_img:
+            image_np = np.array(image) 
+            if i % 100 == 0:
+                print(f"Processing image {i} of {len(images)}")
+            if i > lower_bound and first_img:
                 first_img = False
                 background = image_np
             
@@ -218,14 +224,22 @@ def make_movie(dirname: Path, FPS: int = 30, gif_name: str = "made_gif.mp4", inv
             
             if contour:
                 contour_img, areas, perimeters = find_islands(image_np, show_img = False, line_y = 513)
+                if len(areas) != 0:
+                    avg_area = sum(areas) / len(areas)
+                    total_area = sum(areas)
+                    num_islands = len(areas)
+                else:
 
-                avg_area = sum(areas) / len(areas)
-                total_area = sum(areas)
-                num_islands = len(areas)
+                    avg_area = 0
+                    total_area = 0
+                    num_islands = 0
                 
                 kit = []
                 for j in range(len(areas)):
-                    AP = areas[j] / perimeters[j]
+                    if perimeters[j] == 0:
+                        AP = 0
+                    else:
+                        AP = areas[j] / perimeters[j]
                     kit.append(AP)
                 compactness = np.mean(kit)
                 compactnesses.append(compactness)
@@ -237,6 +251,7 @@ def make_movie(dirname: Path, FPS: int = 30, gif_name: str = "made_gif.mp4", inv
                 avg_area = 0
                 coverage = 0
                 num_islands = 0
+
             islands.append(num_islands)
             avg_areas.append(avg_area)
             coverages.append(coverage)
@@ -244,33 +259,41 @@ def make_movie(dirname: Path, FPS: int = 30, gif_name: str = "made_gif.mp4", inv
 
             contour_img = np.array(contour_img)
             writer.append_data(contour_img)
+            list_num.append(i)
             if save_images:
                 # imageio.imwrite(rf'{dirname}\gif_images\image_{i:04d}.png', contour_img)
                 cv2.imwrite(rf'{dirname}\gif_images\image_{i:04d}.png', contour_img)
-                Image.open(rf'{dirname}\gif_images\image_{i:04d}.png').save(rf'{dirname}\gif_images\image_{i:04d}.pdf')
+                # Image.open(rf'{dirname}\gif_images\image_{i:04d}.png').save(rf'{dirname}\gif_images\image_{i:04d}.pdf')
 
-    fig, [ax1, ax2] = plt.subplots(2, 1, figsize=(10, 10))
-
-    plotting = np.arange(lower_bound, upper_bound+1,1)
-    ax1.plot(plotting, islands)
-    ax1.set_title("Coverage")
-    # ax1.set_xlabel("Image number")
-    ax1.set_ylabel("Coverage (%)")
+    fig, [[ax1, ax2], [ax3, ax4]] = plt.subplots(2, 2, figsize=(10, 10))
+    if contour:
     
-    ax2.plot(plotting, compactnesses)
-    ax2.set_title("Area /perimeter")
-    ax2.set_xlabel("Image number")
-    ax2.set_ylabel("Area/perimeter")
+        # print(islands)
+        ax1.plot(list_num, islands)
+        ax1.set_title("Number of islands")
+        # ax1.set_xlabel("Image number")
+        ax1.set_ylabel("No. Islands")
+        
+        ax2.plot(list_num, compactnesses)
+        ax2.set_title("Area /perimeter")
+        # ax2.set_xlabel("Image number")
+        ax2.set_ylabel("Area/perimeter")
 
-    # ax3.plot(np.arange(len(coverages)), coverages)
-    # ax3.set_title("Coverage of the islands")
-    # ax3.set_xlabel("Image number")
-    # ax3.set_ylabel("Coverage (%)")
+        ax3.plot(list_num, coverages)
+        ax3.set_title("Coverage of the islands")
+        ax3.set_xlabel("Image number")
+        ax3.set_ylabel("Coverage (%)")
 
-    # fig.savefig(rf"{dirname}\output.svg", format="svg")  # Save as SVG
-    fig.savefig(rf"{dirname}\output.pdf", format="pdf")  # Save as PDF
+        ax4.plot(list_num, avg_areas)
+        ax4.set_title("Average area of islands")
+        ax4.set_xlabel("Image number")
+        ax4.set_ylabel("Average area (pixels)")
+        # fig.savefig(rf"{dirname}\output.svg", format="svg")  # Save as SVG
+        # fig.savefig(rf"{dirname}\output.pdf", format="pdf")  # Save as PDF
 
-    plt.show()
+        plt.show()
+
+        print(f"Finished, threshold: {threshold}, invert: {invert}, contour: {contour}")
     return output
 
 
@@ -291,8 +314,9 @@ def make_gif_options( directory=None, name="made_gif.gif", pop_up=False,invert =
     print(f"finished making gif of name {name}")
 
 if __name__ == "__main__":
-    # directory = "C:/Users/ppxfc1/OneDrive - The University of Nottingham/Desktop/PhD/CrCl3/HOPG/7029"
-    directory = "C:/Users/ppxfc1/OneDrive - The University of Nottingham/Desktop/PhD/CrCl3/HOPG/7054"
+    directory = "C:/Users/ppxfc1/OneDrive - The University of Nottingham/Desktop/PhD/CrCl3/SiC/6727"
+    # directory = "C:/Users/ppxfc1/OneDrive - The University of Nottingham/Desktop/PhD/CrCl3/HOPG/7050"
 
     name = "made_gif.mp4"
-    make_gif_options( directory=directory, name=name, pop_up=False,invert=False, threshold=None, save_images=True, contour=False)
+    make_gif_options(directory=directory, name=name,save_images=True,
+                     threshold=85,invert=True, contour=False)

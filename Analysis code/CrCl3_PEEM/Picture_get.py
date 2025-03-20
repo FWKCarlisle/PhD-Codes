@@ -7,10 +7,10 @@ from PIL import Image, ImageDraw, ImageFont
 # Opening the test image, and saving it's object
 
 
-number = 6671 #next
+number = 6727 #next
 # type = "HOPG" 
 type = "SiC"
-path = rf"C:\Users\ppxfc1\OneDrive - The University of Nottingham\Desktop\PhD\CrCl3\mm38550-1\i06-2-{number}.nxs"
+path = rf"C:\Users\ppxfc1\OneDrive - The University of Nottingham\Desktop\PhD\CrCl3\mm38550-2\i06-2-{number}.nxs"
 save_path = rf"C:\Users\ppxfc1\OneDrive - The University of Nottingham\Desktop\PhD\CrCl3\{type}\{number}"
 
 
@@ -45,7 +45,7 @@ def save_images(images, save_path=rf"C:\Users\ppxfc1\OneDrive - The University o
             pil_image = Image.fromarray(image)
 
             # Create a new image with extra space at the bottom for the text
-            new_image = Image.new('RGB', (pil_image.width, pil_image.height + 50), (255, 255, 255))
+            new_image = Image.new('RGB', (pil_image.width, pil_image.height + 64), (255, 255, 255))
             new_image.paste(pil_image, (0, 0))
 
             brightness = calculate_average_brightness(new_image)

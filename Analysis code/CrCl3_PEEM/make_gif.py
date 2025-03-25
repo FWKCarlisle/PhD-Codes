@@ -21,6 +21,7 @@ def threshold_image(image, threshold_value: int = 50,background_img = None):
         max_value = np.max(background_img)
     else:
         max_value = np.max(image)
+    # print(threshold_value)
     image[image < (threshold_value / 100) * max_value] = 0
     image[image > (threshold_value / 100) * max_value] = 255
 
@@ -63,16 +64,17 @@ def find_islands(image_np, show_img = False, line_y = 513):
 
     # Filter out small islands (e.g., noise)
     min_area = 50  # Adjust based on your image
+    max_area = 2250
 
     
-    filtered_contours = [cnt for cnt in contours if cv2.contourArea(cnt) > min_area]
+    filtered_contours = [cnt for cnt in contours if cv2.contourArea(cnt) > min_area and cv2.contourArea(cnt) < max_area]     
 
     # Sort contours by area (largest first)
     filtered_contours = sorted(filtered_contours, key=cv2.contourArea, reverse=True)
 
     # Remove the largest contour (assumed to be the background)
     if len(filtered_contours) > 1:
-        filtered_contours = filtered_contours[3:]  # Keep all but the largest
+        filtered_contours = filtered_contours[1:]  # Keep all but the largest
 
     # Define alternating colors for filling
     colors = [(255, 0, 0), (0, 255, 0), (0, 0, 255), (255, 255, 0), (255, 165, 0)]  # Red, Green, Blue, Yellow, Orange
@@ -293,7 +295,7 @@ def make_movie(dirname: Path, FPS: int = 20, gif_name: str = "made_gif.mp4", inv
 
         plt.show()
 
-        print(f"Finished, threshold: {threshold}, invert: {invert}, contour: {contour}")
+    print(f"Finished, threshold: {threshold}, invert: {invert}, contour: {contour}")
     return output
 
 
@@ -314,9 +316,9 @@ def make_gif_options( directory=None, name="made_gif.gif", pop_up=False,invert =
     print(f"finished making gif of name {name}")
 
 if __name__ == "__main__":
-    directory = "C:/Users/ppxfc1/OneDrive - The University of Nottingham/Desktop/PhD/CrCl3/SiC/6727"
+    directory = "C:/Users/ppxfc1/OneDrive - The University of Nottingham/Desktop/PhD/CrCl3/SiC/6711"
     # directory = "C:/Users/ppxfc1/OneDrive - The University of Nottingham/Desktop/PhD/CrCl3/HOPG/7050"
 
     name = "made_gif.mp4"
     make_gif_options(directory=directory, name=name,save_images=True,
-                     threshold=85,invert=True, contour=False)
+                     threshold=87.5,invert=True, contour=True)

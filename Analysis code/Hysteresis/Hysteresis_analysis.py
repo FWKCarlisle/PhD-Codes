@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from nexusformat.nexus import nxload
 from pathlib import Path
+from scipy.integrate import simps
 import datetime
 import csv
 import pptx
@@ -413,6 +414,10 @@ def manual_hyst(data_dir,Yield = "TEY",file_name = "Manual_Hysteresis_1", normal
         height_pc = max(pc_TEY) - min(pc_TEY)
         height_nc = max(nc_TEY) - min(nc_TEY)
         XMCD_norm = XMCD /(0.5*(height_pc +height_nc))
+
+        XMCD_change = np.mean(XMCD_norm[:10])
+        XMCD_norm -= XMCD_change
+        
         label = f"{pc_file} - {nc_file} @ {pc_Bfield}/{nc_Bfield} @ {temp}K"
         # print(label)
         temp =(pc_temp + nc_temp)*0.5
@@ -491,6 +496,7 @@ def manual_hyst(data_dir,Yield = "TEY",file_name = "Manual_Hysteresis_1", normal
     save_to_presentation(prs, r"PhD-Codes\Analysis code\Hysteresis\data_for_ppt\plot.png",filename = file_name)
     # plt.show()
     # remenance =  get_remenance(M3_hyst, M3_B)
+    plt.close("all")
     return max(M3_hyst)#, remenance, remenance/max(M3_hyst)
 
 def setup_presentation():
@@ -512,7 +518,7 @@ def save_to_presentation(prs,image_path, filename = "presentation"):
     pptx_filename = rf"PhD-Codes\Analysis code\Hysteresis\{filename}.pptx"
     prs.save(pptx_filename)
 
-    print(f"Presentation saved as {pptx_filename}")
+    # print(f"Presentation saved as {pptx_filename}")
 
 
 print("Saved Code")
@@ -522,8 +528,9 @@ in_bounds = [[-0.1,0.1],[-0.1,0.1]]
 print("ALL GOOD HERE BOSS: ", datetime.datetime.now())
 # list = ["2k","2k_2","2k_GI","2k_NI","8k","10k","11.8k","11k","12.2k","12.4","12.5k","12.5k_2","12.6_2",]
 # list = ["BP_12.4k","12.6k","12.7k","12.8k","12.8k_2","12.9k","12k","12k_2","13.2k","13k","13k_2","14k","15k","17k", ]
+list = ["2k_GI","2k_NI",]
 for i, x in enumerate(list):
-    if i == 0:
+    if x[0] == "B":
         file_name = x
     else:
         file_name = f"Hyst_{x}"

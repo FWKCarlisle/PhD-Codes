@@ -316,9 +316,9 @@ def make_gif_options( directory=None, name="made_gif.gif", pop_up=False,invert =
     print(f"finished making gif of name {name}")
 
 if __name__ == "__main__":
-    directory = "C:/Users/ppxfc1/OneDrive - The University of Nottingham/Desktop/PhD/CrCl3/SiC/6711"
+    directory = "C:/Users/ppxfc1/OneDrive - The University of Nottingham/Desktop/PhD/CrCl3/SiC/6727"
     # directory = "C:/Users/ppxfc1/OneDrive - The University of Nottingham/Desktop/PhD/CrCl3/HOPG/7050"
 
     name = "made_gif.mp4"
     make_gif_options(directory=directory, name=name,save_images=True,
-                     threshold=87.5,invert=True, contour=True)
+                     threshold=88,invert=True, contour=True)

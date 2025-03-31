@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import time
+import serial
 
 import sys
 from PyQt5.QtWidgets import (
@@ -41,6 +42,13 @@ class MatplotlibWidget(FigureCanvas):
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
+
+        self.ser = serial.Serial("COM3", 9600, serial.SEVENBITS,
+        serial.PARITY_ODD, serial.STOPBITS_ONE )
+    #ser.baudrate = int(9600)
+    #ser.port = "COM4"
+        ser.timeout = int(5)
+        
         self.setWindowTitle("PyQt5 with Matplotlib")
         self.setGeometry(100, 100, 800, 600)
 

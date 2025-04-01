@@ -8,7 +8,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 from nexusformat.nexus import nxload
 from pathlib import Path
-from scipy.integrate import simps
+from scipy.integrate import simpson 
+from mpl_toolkits.axes_grid1.inset_locator import inset_axes
+
 import datetime
 import csv
 import pptx
@@ -401,23 +403,29 @@ def manual_hyst(data_dir,Yield = "TEY",file_name = "Manual_Hysteresis_1", normal
 
     
     XMCDs = []
+    integrations = []
     if os.path.exists(rf"PhD-Codes\Analysis code\Hysteresis\{file_name}.pptx"):
         os.remove(rf"PhD-Codes\Analysis code\Hysteresis\{file_name}.pptx")
     prs = setup_presentation()
     for i, data in enumerate(final_pc):
-        pc_TEY, pc_Bfield, pc_Fenergy,pc_temp, pc_file = data
-        nc_TEY,nc_Bfield,nc_Fenergy, nc_temp,nc_file = final_nc[i]
+        pc_TEY, pc_Bfield, pc_Fenergy, pc_temp, pc_file = data
+        nc_TEY, nc_Bfield, nc_Fenergy, nc_temp, nc_file = final_nc[i]
         if scaling is not None:
             nc_TEY *= scaling
-        XMCD =  pc_TEY - nc_TEY
-        # print(pc_file, nc_file)
+        XMCD = pc_TEY - nc_TEY
         height_pc = max(pc_TEY) - min(pc_TEY)
         height_nc = max(nc_TEY) - min(nc_TEY)
-        XMCD_norm = XMCD /(0.5*(height_pc +height_nc))
+        XMCD_norm = XMCD / (0.5 * (height_pc + height_nc))
 
         XMCD_change = np.mean(XMCD_norm[:10])
         XMCD_norm -= XMCD_change
-        
+
+        # Square the XMCD_norm values
+        XMCD_norm_squared = XMCD_norm**2
+
+        # Perform numerical integration using simps
+        integration_result = np.sqrt(simpson(y=XMCD_norm_squared, x=pc_Fenergy))
+        integrations.append(integration_result)
         label = f"{pc_file} - {nc_file} @ {pc_Bfield}/{nc_Bfield} @ {temp}K"
         # print(label)
         temp =(pc_temp + nc_temp)*0.5
@@ -433,14 +441,20 @@ def manual_hyst(data_dir,Yield = "TEY",file_name = "Manual_Hysteresis_1", normal
             fig, [axXAS, axXMCD] = plt.subplots(1,2, sharey=True)
             axXAS.plot(pc_Fenergy, pc_TEY, label="pc")
             axXAS.plot(nc_Fenergy, nc_TEY, label="nc")
-            axXMCD.plot(pc_Fenergy, XMCD_norm, label = "Norm XMCD")
-            axXMCD.plot(pc_Fenergy, XMCD, label = "XMCD")
-            axXAS.legend
-            
-            axXAS.axvline(x=576.8, alpha=0.25, color = "b",linestyle = 'dashed', label = "576.8")
-            axXAS.axvline(x=578.0, alpha=0.25, color = "c",linestyle = 'dashed', label = "578.0")
-            axXMCD.axvline(x=576.8, alpha=0.25, color = "b",linestyle = 'dashed', label = "576.8")
-            axXMCD.axvline(x=578.0, alpha=0.25, color = "c",linestyle = 'dashed', label = "578.0")
+            axXAS.set_title("XAS")
+            axXAS.legend()
+
+            # Plot XMCD data
+            axXMCD.plot(pc_Fenergy, XMCD_norm, label="XMCD_norm")
+            axXMCD.plot(pc_Fenergy, XMCD_norm_squared, label="XMCD_norm_sqrd")
+            axXMCD.fill_between(pc_Fenergy, 0, XMCD_norm_squared, color='orange', alpha=0.3, label="Integration Area")
+            axXMCD.set_title("XMCD")
+            axXMCD.legend()
+
+            # Add integration result to the plot
+            axXMCD.text(0.05, 0.95, f"Integration: {integration_result:.2f}", transform=axXMCD.transAxes,
+                fontsize=10, verticalalignment='top', bbox=dict(boxstyle="round", facecolor="white", alpha=0.5))
+
             plt.title(label)
             
             plt.axhline(y = 0, color = 'b', linestyle = 'dashed', label=f"{ round(percentage,3) }% ")
@@ -474,22 +488,40 @@ def manual_hyst(data_dir,Yield = "TEY",file_name = "Manual_Hysteresis_1", normal
             plt.text(B,hyst, f"{j} {60-j}")
         
     co = np.arange(0,len(XMCDs),1)
-    # plt.figure(31)
-    # plt.scatter(M1_B, M1_hyst, c=co,cmap='winter')
+
+    for i in range(len(M3_B)):
+        if M3_B[i] < 0:
+            integrations[i] = -integrations[i]
+
+    
     plt.figure(i+1)
-    # plt.scatter(M2_B, M2_hyst, c=co,cmap='winter')
-    plt.scatter(M3_B, M3_hyst,marker='o' ,c=co,cmap='inferno')
-    # plt.plot(M3_B, M3_hyst,linestyle="-" ,c="r")
+    
+    plt.scatter(M3_B, M3_hyst,marker='o' ,c=co,cmap='inferno', label = "Raw XMCD")
+    plt.scatter(M3_B, integrations,marker='x',c=co,cmap='inferno', label = "Integration")
+    
     if bounds is not None:
         plt.xlim(bounds[0])
         plt.ylim(bounds[1])
+    
+    plt.xlabel("$B_z (T)$")
+    plt.ylabel("$XMCD_{Norm}$")
+
     data_dir = str(data_dir)
     plt.axhline(y=0)
     plt.axvline(x=0)
     plt.title((data_dir[len(data_dir)-20:len(data_dir)],"$T_{average} = $",round(np.mean(temps),5),"K"))
-    plt.xlabel("$B_z (T)$")
-    plt.ylabel("$XMCD_{Norm}$")
-    
+   
+    ax_inset = inset_axes(plt.gca(), width="40%", height="40%", loc="lower right")  # Adjust size and location
+    ax_inset.scatter(M3_B, M3_hyst, marker='o', c=co, cmap='inferno')
+    ax_inset.scatter(M3_B, integrations, marker='x', c=co, cmap='inferno')
+
+    inset_bounds = ([-0.04, 0.04], [min(M3_hyst)-0.1,max(M3_hyst)+0.1])  # Example bounds for the inset
+    ax_inset.set_xlim(inset_bounds[0])
+    # ax_inset.set_ylim(inset_bounds[1])
+
+    ax_inset.set_title("Zoomed Inset", fontsize=8)
+    ax_inset.tick_params(axis='both', which='major', labelsize=6)
+
     plt.colorbar(label = "Index")
     plt.savefig(r"PhD-Codes\Analysis code\Hysteresis\data_for_ppt\plot.png")
 
@@ -522,19 +554,20 @@ def save_to_presentation(prs,image_path, filename = "presentation"):
 
 
 print("Saved Code")
-directory_path = r"C:\Users\ppxfc1\OneDrive - The University of Nottingham\Desktop\PhD\CrCl3\MM38256-1\BP1\Hysteresis_analysis"
+directory_path = r"C:\Users\ppxfc1\OneDrive - The University of Nottingham\Desktop\PhD\CrCl3\MM38256-1\HOPG1\Hysteresis_analysis"
 ﬁle_preﬁx = "i06-1-"
 in_bounds = [[-0.1,0.1],[-0.1,0.1]]
 print("ALL GOOD HERE BOSS: ", datetime.datetime.now())
 # list = ["2k","2k_2","2k_GI","2k_NI","8k","10k","11.8k","11k","12.2k","12.4","12.5k","12.5k_2","12.6_2",]
 # list = ["BP_12.4k","12.6k","12.7k","12.8k","12.8k_2","12.9k","12k","12k_2","13.2k","13k","13k_2","14k","15k","17k", ]
-list = ["2k_GI","2k_NI",]
+
+list = ["1","2","3","4","5","6","7","10k","11k","12.5k","12k","12k_2","13.5k","13k","14k","14k_2","20k",]
 for i, x in enumerate(list):
     if x[0] == "B":
         file_name = x
     else:
-        file_name = f"Hyst_{x}"
-
+        # file_name = f"Hyst_{x}"
+        file_name = f"Manual_Hysteresis_{x}"
     file_path = Path(directory_path + f"/{file_name}/")
     manual_hyst(file_path,plot_xmcd=True,bounds = ([-2.1,2.1],[-1.5,1.5]), file_name=file_name)
 

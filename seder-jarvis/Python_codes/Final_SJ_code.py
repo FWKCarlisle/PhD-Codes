@@ -271,7 +271,6 @@ def calc_force_trapz (z, df, A, k, f_0, abs_YN = True):
         ### Abs to stop negative values, added 11:05, 29/10/24
         # abs_YN = True
         if abs_YN:
-
             integral = np.trapezoid((1 + np.sqrt(A) / (8 * np.sqrt(np.pi * abs(t - z[j])))) * Omega_tmp - 
                             A**(3/2) / np.sqrt(2 * abs(t - z[j])) * dOmega_dz_tmp, t)
             
@@ -284,7 +283,7 @@ def calc_force_trapz (z, df, A, k, f_0, abs_YN = True):
             
             inner = (1 + np.sqrt(A) / (8 * np.sqrt(np.pi * (t - z[j])))) * Omega_tmp - A**(3/2) / np.sqrt(2 * (t - z[j])) * dOmega_dz_tmp
         
-            integral = np.trapz(inner, t)
+            integral = np.trapezoid(inner, t)
             
             # correction terms for t=z from [2]
             corr1 = Omega[j] * (z[j+1] - z[j])

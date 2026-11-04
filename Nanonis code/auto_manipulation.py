@@ -12,7 +12,7 @@ import numpy as np
 import warnings
 import sys
 
-import python_interface_nanonis_v7 as python_nano
+import python_interface_nanonis_v9 as python_nano
 import find_atoms
 from path_finding import AStarSquareGrid
 

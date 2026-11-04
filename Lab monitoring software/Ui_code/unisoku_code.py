@@ -29,13 +29,33 @@ from matplotlib.backends.backend_qt5agg import (
 class MatplotlibWidget(FigureCanvas):
     def __init__(self, parent=None):
         # Create a Matplotlib figure
+<<<<<<< HEAD
+        self.fig, self.TempAx = plt.subplots()
+        self.presAx = self.TempAx.twinx()
+=======
         self.fig, self.ax = plt.subplots()
+>>>>>>> d8b78663c4fcb30e59b51ec4e56e58f682b659f6
         super().__init__(self.fig)
 
         # Optional: Set parent widget
         if parent is not None:
             self.setParent(parent)
 
+<<<<<<< HEAD
+    def plot_graph(self, x, y,data_label,marker_size, type = 'Scatter',colour="b", TP = "T"):
+        # Plot a simple graph
+        if type == 'Line':
+            if TP == "T":
+                self.TempAx.plot(x, y, c=colour,label=data_label)
+            elif TP == "P":
+                self.presAx.plot(x, y, c=colour,label=data_label)
+
+        else:
+            if TP == "T":
+                self.TempAx.scatter(x, y, c=colour,label=data_label,s=marker_size)
+            elif TP == "P":
+                self.presAx.scatter(x, y, c=colour,label=data_label,s=marker_size)
+=======
     def plot_graph(self, x, y,   data_label,marker_size, type = 'Scatter',colour="b"):
         # Plot a simple graph
        
@@ -43,14 +63,23 @@ class MatplotlibWidget(FigureCanvas):
             self.ax.plot(x, y, c=colour,label=data_label)
         else:
             self.ax.scatter(x, y, c=colour,label=data_label,s=marker_size)
+>>>>>>> d8b78663c4fcb30e59b51ec4e56e58f682b659f6
        
        
        
     def draw_graph(self,title,xlabel, ylabel):
+<<<<<<< HEAD
+        self.TempAx.legend()
+        self.TempAx.set_title(title)
+        self.TempAx.set_xlabel(xlabel)
+        self.TempAx.set_ylabel(ylabel)
+        self.presAx.set_ylabel("Pressure (mBar)")
+=======
         self.ax.legend()
         self.ax.set_title(title)
         self.ax.set_xlabel(xlabel)
         self.ax.set_ylabel(ylabel)
+>>>>>>> d8b78663c4fcb30e59b51ec4e56e58f682b659f6
         self.draw()
 
 class MainWindow(QMainWindow):
@@ -60,9 +89,17 @@ class MainWindow(QMainWindow):
        
         self.ser = serial.Serial("COM6", 9600, serial.EIGHTBITS,
             serial.PARITY_NONE, serial.STOPBITS_ONE )
+<<<<<<< HEAD
+        self.ser.timeout = int(5)
+
+        self.PresSer = serial.Serial("COM7", 9600, serial.EIGHTBITS, 
+            serial.PARITY_NONE, serial.STOPBITS_ONE )
+        self.PresSer.timeout = int(5)
+=======
         #ser.baudrate = int(9600)
         #ser.port = "COM4"
         self.ser.timeout = int(5)
+>>>>>>> d8b78663c4fcb30e59b51ec4e56e58f682b659f6
        
         super().__init__()
         self.setWindowTitle("PyQt5 with Matplotlib")
@@ -76,6 +113,10 @@ class MainWindow(QMainWindow):
         self.time = []
         self.temp_location = "STM"
         self.temp_locations = {"STM": 1, "Sorb": 0, "3He": 0, "1K pot": 0}
+<<<<<<< HEAD
+        self.plot_locations = {"STM": 1, "Sorb": 1, "3He": 1, "1K pot": 1, "Prep": 2, "Exchange": 2}
+=======
+>>>>>>> d8b78663c4fcb30e59b51ec4e56e58f682b659f6
         self.temp_locations_list = ",".join([key for key in self.temp_locations.keys() if self.temp_locations[key]==1])
        
         self.data_list_len = 5000
@@ -114,10 +155,25 @@ class MainWindow(QMainWindow):
         self.temp_label_ThreeHe.setFont(font)
         self.temp_label_OneK = QLabel("Temp (1K): K")
         self.temp_label_OneK.setFont(font)
+<<<<<<< HEAD
+
+        self.temp_label_Prep = QLabel("Pres (prep): mBar")
+        self.temp_label_Prep.setFont(font)
+        self.temp_label_Exchange = QLabel("Pres (Ex): mBar")
+        self.temp_label_Exchange.setFont(font)
+
+=======
+>>>>>>> d8b78663c4fcb30e59b51ec4e56e58f682b659f6
         label_layout.addWidget(self.temp_label_STM)
         label_layout.addWidget(self.temp_label_Sorb)
         label_layout.addWidget(self.temp_label_ThreeHe)
         label_layout.addWidget(self.temp_label_OneK)
+<<<<<<< HEAD
+        label_layout.addWidget(self.temp_label_Prep)
+        label_layout.addWidget(self.temp_label_Exchange)
+
+=======
+>>>>>>> d8b78663c4fcb30e59b51ec4e56e58f682b659f6
         # Label and input box 1
         label1 = QLabel("Refresh rate (ms):")
         self.rate_label = QLineEdit(f"{self.refresh_rate}")
@@ -138,6 +194,83 @@ class MainWindow(QMainWindow):
         self.type_box.setFont(font)
         label_layout.addWidget(label1)
         label_layout.addWidget(self.type_box)
+<<<<<<< HEAD
+
+        comment = QLabel("Select the data you want to plot:")
+        label_layout.addWidget(comment)
+        checkboxes = QHBoxLayout()
+        label1 = "Plot 1"
+        
+        plot_1 = QVBoxLayout()
+        plot_2 = QVBoxLayout()
+       
+        self.checkBox_STM = QCheckBox("STM" )
+        self.checkBox_STM.setFont(font)
+        self.checkBox_STM.stateChanged.connect(self.checkedSTM("one"))
+        self.checkBox_STM.setChecked(True)
+        plot_1.addWidget(self.checkBox_STM)
+       
+        self.checkBox_Sorb = QCheckBox("Sorb")
+        self.checkBox_Sorb.setFont(font)
+        self.checkBox_Sorb.stateChanged.connect(self.checkedSorb("one"))
+        plot_1.addWidget(self.checkBox_Sorb)
+       
+        self.checkBox_ThreeHe = QCheckBox("3He")
+        self.checkBox_ThreeHe.setFont(font)
+        self.checkBox_ThreeHe.stateChanged.connect(self.checkedThreeHe("one"))
+        plot_1.addWidget(self.checkBox_ThreeHe)
+       
+        self.checkBox_OneK = QCheckBox("1k pot")
+        self.checkBox_OneK.setFont(font)
+        self.checkBox_OneK.stateChanged.connect(self.checkedOneK("one"))
+        plot_1.addWidget(self.checkBox_OneK)
+        
+        self.checkBox_Prep = QCheckBox("Prep")
+        self.checkBox_Prep.setFont(font)
+        self.checkBox_Prep.stateChanged.connect(self.checkedPrep("one"))
+        plot_1.addWidget(self.checkBox_Prep)
+
+        self.checkBox_Exchange = QCheckBox("Exchange")
+        self.checkBox_Exchange.setFont(font)
+        self.checkBox_Exchange.stateChanged.connect(self.checkedExchange("one"))
+        plot_1.addWidget(self.checkBox_Exchange)
+
+        self.checkBox_STM = QCheckBox("STM" )
+        self.checkBox_STM.setFont(font)
+        self.checkBox_STM.stateChanged.connect(self.checkedSTM("two"))
+        self.checkBox_STM.setChecked(True)
+        plot_2.addWidget(self.checkBox_STM)
+       
+        self.checkBox_Sorb = QCheckBox("Sorb")
+        self.checkBox_Sorb.setFont(font)
+        self.checkBox_Sorb.stateChanged.connect(self.checkedSorb("two"))
+        plot_2.addWidget(self.checkBox_Sorb)
+       
+        self.checkBox_ThreeHe = QCheckBox("3He")
+        self.checkBox_ThreeHe.setFont(font)
+        self.checkBox_ThreeHe.stateChanged.connect(self.checkedThreeHe("two"))
+        plot_2.addWidget(self.checkBox_ThreeHe)
+       
+        self.checkBox_OneK = QCheckBox("1k pot")
+        self.checkBox_OneK.setFont(font)
+        self.checkBox_OneK.stateChanged.connect(self.checkedOneK("two"))
+        plot_2.addWidget(self.checkBox_OneK)
+        
+        self.checkBox_Prep = QCheckBox("Prep")
+        self.checkBox_Prep.setFont(font)
+        self.checkBox_Prep.stateChanged.connect(self.checkedPrep("two"))
+        plot_2.addWidget(self.checkBox_Prep)
+
+        self.checkBox_Exchange = QCheckBox("Exchange")
+        self.checkBox_Exchange.setFont(font)
+        self.checkBox_Exchange.stateChanged.connect(self.checkedExchange("two"))
+        plot_2.addWidget(self.checkBox_Exchange)
+    
+
+        checkboxes.addLayout(plot_1)
+        checkboxes.addLayout(plot_2)
+        label_layout.addLayout(checkboxes)
+=======
        
        
    
@@ -159,6 +292,7 @@ class MainWindow(QMainWindow):
         self.checkBox_OneK.stateChanged.connect(self.checkedOneK)
         label_layout.addWidget(self.checkBox_OneK)
    
+>>>>>>> d8b78663c4fcb30e59b51ec4e56e58f682b659f6
         # Add a button
         button = QPushButton("Update graph settings", self)
         button.setFont(font)
@@ -178,9 +312,18 @@ class MainWindow(QMainWindow):
         # Set layout to central widget
         central_widget.setLayout(main_layout)
 
+<<<<<<< HEAD
+    def checkedSTM(self, checked, location):
+        if checked:
+            if location == "one":
+                self.temp_locations['STM']= 1
+            elif location == "two":
+                self.temp_locations['STM']= 1
+=======
     def checkedSTM(self, checked):
         if checked:
             self.temp_locations['STM']= 1
+>>>>>>> d8b78663c4fcb30e59b51ec4e56e58f682b659f6
         else:
             self.temp_locations['STM']= 0
         self.show()
@@ -205,6 +348,23 @@ class MainWindow(QMainWindow):
         else:
             self.temp_locations['1K pot']= 0
         self.show()
+<<<<<<< HEAD
+
+    def checkedPrep(self, checked):
+        if checked:
+            self.temp_locations['Prep']= 1
+        else:
+            self.temp_locations['Prep']= 0
+        self.show()
+
+    def checkedExchange(self, checked):
+        if checked:
+            self.temp_locations['Exchange']= 1
+        else:
+            self.temp_locations['Exchange']= 0
+        self.show()
+=======
+>>>>>>> d8b78663c4fcb30e59b51ec4e56e58f682b659f6
        
     def update_graph_settings(self):
         print("Updating graph settings")
@@ -220,6 +380,11 @@ class MainWindow(QMainWindow):
             self.Sorb = []
             self.ThreeHe = []
             self.OneK =[]
+<<<<<<< HEAD
+            self.Prep = []
+            self.Exchange = []
+=======
+>>>>>>> d8b78663c4fcb30e59b51ec4e56e58f682b659f6
             self.time = []
             self.init_time = time.time()
            
@@ -239,6 +404,11 @@ class MainWindow(QMainWindow):
         self.temp_label_ThreeHe.setFont(font)
         self.rate_label.setFont(font)
         self.num_points.setFont(font)
+<<<<<<< HEAD
+        self.temp_label_Prep.setFont(font)
+        self.temp_label_Exchange.setFont(font)
+=======
+>>>>>>> d8b78663c4fcb30e59b51ec4e56e58f682b659f6
         self.type_box.setFont(font)
         # Dynamically adjust the marker size based on window size
         # Marker size will range from 10 to 200, depending on the window's width
@@ -248,20 +418,33 @@ class MainWindow(QMainWindow):
        
        
     def update_data(self):
+<<<<<<< HEAD
+        STM, Sorb, one_k, three_He, prep, exchange = self.read_data()
+=======
         STM, Sorb, one_k, three_He = self.read_data()
+>>>>>>> d8b78663c4fcb30e59b51ec4e56e58f682b659f6
        
         self.STM,  pop1 = self.update_arrays(STM, self.STM, self.data_list_len)
         self.Sorb, pop2 = self.update_arrays(Sorb, self.Sorb, self.data_list_len)
         self.OneK, pop3 = self.update_arrays(one_k, self.OneK, self.data_list_len)
         self.ThreeHe, pop4 = self.update_arrays(three_He, self.ThreeHe, self.data_list_len)
+<<<<<<< HEAD
+        self.Prep, pop5 = self.update_arrays(prep, self.Prep, self.data_list_len)
+        self.Exchange, pop6 = self.update_arrays(exchange, self.Exchange, self.data_list_len)
+=======
        
        
        
+>>>>>>> d8b78663c4fcb30e59b51ec4e56e58f682b659f6
        
         time_diff = time.time() - self.init_time
         self.time.append(time_diff)
 
+<<<<<<< HEAD
+        if pop1 == True or pop2 == True or pop3 == True or pop4 == True or pop5 == True or pop6 == True:
+=======
         if pop1 == True or pop2 == True or pop3 == True or pop4 == True:
+>>>>>>> d8b78663c4fcb30e59b51ec4e56e58f682b659f6
             self.time.pop(0)
            
     def update_arrays (self,value, array, list_len):
@@ -282,6 +465,35 @@ class MainWindow(QMainWindow):
     def update_graph(self):
         self.update_data()
        
+<<<<<<< HEAD
+        self.canvas.TempAx.clear()
+        #print(self.temp_locations_list)
+        if "Sorb" in self.temp_locations_list:
+            #print("Yes", len(self.time), len(self.Sorb))
+            self.canvas.plot_graph(self.time, self.Sorb, "Sorb",self.marker_size ,self.graph_type,colour="r", TP="T")
+            self.temp_label_Sorb.setText(f"Temp (Sorb): {self.Sorb[-1]} K")
+        if "STM" in self.temp_locations_list:
+            #print("No", len(self.time), len(self.STM))
+            self.canvas.plot_graph(self.time, self.STM, "STM",self.marker_size ,self.graph_type,colour="b", TP="T")
+            self.temp_label_STM.setText(f"Temp (STM): {self.STM[-1]} K")
+        if "1K pot" in self.temp_locations_list:
+            #print("Maybe", len(self.time), len(self.OneK))
+            self.canvas.plot_graph(self.time, self.OneK, "1K",self.marker_size ,self.graph_type,colour="g", TP="T")
+            self.temp_label_OneK.setText(f"Temp (1K): {self.OneK[-1]} K")
+        if "3He" in self.temp_locations_list:
+            #print("Maybe", len(self.time), len(self.ThreeHe))
+            self.canvas.plot_graph(self.time, self.ThreeHe, "3He",self.marker_size ,self.graph_type,colour="orange", TP="T")
+            self.temp_label_ThreeHe.setText(f"Temperature (3He): {self.ThreeHe[-1]} K")
+        if "Prep" in self.temp_locations_list:
+            #print("Maybe", len(self.time), len(self.Prep))
+            self.canvas.plot_graph(self.time, self.Prep, "Prep",self.marker_size ,self.graph_type,colour="purple", TP="P")
+            self.temp_label_Prep.setText(f"Pres (prep): {self.Prep[-1]} mBar")
+        if "Exchange" in self.temp_locations_list:
+            #print("Maybe", len(self.time), len(self.Exchange))
+            self.canvas.plot_graph(self.time, self.Exchange, "Exchange",self.marker_size ,self.graph_type,colour="pink", TP="P")
+            self.temp_label_Exchange.setText(f"Pres (Ex): {self.Exchange[-1]} mBar")
+        self.canvas.draw_graph("Temp/Pressure data against time", "Time (s)", "Temp (K)")
+=======
         self.canvas.ax.clear()
         #print(self.temp_locations_list)
         if "Sorb" in self.temp_locations_list:
@@ -301,6 +513,7 @@ class MainWindow(QMainWindow):
             self.canvas.plot_graph(self.time, self.ThreeHe, "3He",self.marker_size ,self.graph_type,colour="orange")
             self.temp_label_ThreeHe.setText(f"Temperature (3He): {self.ThreeHe[-1]} K")
         self.canvas.draw_graph("Temp data against time", "Time (s)", "Temp (K)")
+>>>>>>> d8b78663c4fcb30e59b51ec4e56e58f682b659f6
        
        
        
@@ -313,6 +526,11 @@ class MainWindow(QMainWindow):
         one_k = None
         three_He = None
         STM = None
+<<<<<<< HEAD
+        prep = None
+        exchange = None
+=======
+>>>>>>> d8b78663c4fcb30e59b51ec4e56e58f682b659f6
        
         if "STM" in self.temp_locations_list:
             self.ser.write(b'input? d\r\n')
@@ -326,10 +544,29 @@ class MainWindow(QMainWindow):
         if "3He" in self.temp_locations_list:
             self.ser.write(b'input? c\r\n')
             three_He = round(float(self.ser.readline().decode()),4)
+<<<<<<< HEAD
+        if "Prep" or "Exchange" in self.temp_locations_list:
+            self.PresSer.write(b'#000F')
+            pressures = self.PresSer.readline().decode()
+            prep, exchange, llc = pressures.split(",")
+            prep = float(prep[1:])
+            exchange = float(exchange)
+            llc = float(llc)
+            self.temp_label_Prep.setText(f"Pres (prep): {prep} mBar")
+            self.temp_label_Exchange.setText(f"Pres (Ex): {exchange} mBar")
+
+        with open("unisoku_data.txt", "a") as file:
+            file.write(f"{time.()},{STM},{Sorb},{one_k},{three_He},{prep},{exchange}\n")
+       
+   
+       
+        return STM, Sorb, one_k, three_He, prep, exchange
+=======
        
    
        
         return STM, Sorb, one_k, three_He
+>>>>>>> d8b78663c4fcb30e59b51ec4e56e58f682b659f6
 
 
 
@@ -339,6 +576,9 @@ if __name__ == "__main__":
     app = QApplication(sys.argv)
     window = MainWindow()
     window.show()
+<<<<<<< HEAD
+    sys.exit(app.exec_())
+=======
     sys.exit(app.exec_())
 ________________________________________
 From: Frederick Carlisle <ppxfc1@exmail.nottingham.ac.uk>
@@ -461,3 +701,4 @@ update_graph()
 # Run the Tkinter event loop
 root.mainloop()
 
+>>>>>>> d8b78663c4fcb30e59b51ec4e56e58f682b659f6

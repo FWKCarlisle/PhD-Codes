@@ -7,11 +7,12 @@ from PIL import Image, ImageDraw, ImageFont
 # Opening the test image, and saving it's object
 
 
-number = 6711 #next
-# type = "HOPG" 
-type = "SiC"
-path = rf"C:\Users\ppxfc1\OneDrive - The University of Nottingham\Desktop\PhD\CrCl3\mm38550-2\i06-2-{number}.nxs"
-save_path = rf"C:\Users\ppxfc1\OneDrive - The University of Nottingham\Desktop\PhD\CrCl3\{type}\{number}"
+number = 7050 #next
+type = "HOPG" 
+# type = "SiC"
+# path = rf"C:\Users\ppxfc1\OneDrive - The University of Nottingham\Desktop\PhD\CrCl3\mm38550-2\i06-2-{number}.nxs"
+path = rf"C:\Users\ppxfc1\Downloads\i06-2-8549.nxs"
+save_path = rf"C:\Users\ppxfc1\Downloads\test_images"
 
 
 
@@ -19,7 +20,8 @@ def grab_images(path):
     nexus = nxload(path)
     print(nexus.tree)
     images = nexus['/entry/medipix/data']
-    return images
+    print(images)
+    return images.nxdata
 
 def calculate_average_brightness(image):
     return np.mean(image)
@@ -30,7 +32,7 @@ def save_images(images, save_path=rf"C:\Users\ppxfc1\OneDrive - The University o
     slab_size = 100  # Adjust this size based on your memory capacity
     brightneses = []  
 # Process images in slabs
-    num_images = images.shape[0]
+    num_images = 3000
     for start in range(0, num_images, slab_size):
         end = min(start + slab_size, num_images)
         slab = images[start:end]

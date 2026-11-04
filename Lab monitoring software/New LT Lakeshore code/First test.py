@@ -1,49 +1,28 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Wed Aug  7 13:52:51 2024
-
-@author: ppztsj
-"""
-
-"Test script for opening communications with Lakeshore 331 Temperature controller"
 
 import serial
-
-# LSserial = serial.Serial( 'COM4', 9600, serial.SEVENBITS, serial.PARITY_ODD, 
-#                        serial.STOPBITS_ONE )
-
-# #LSserial.open()
-# print("Connecting")
-# # Query message :
-# #     CRDG = Celsius Reading Query
-# #     A is the input can be A or B
-# #     Terminators are <CR><LF>
-# LSserial.write( 'PID? 1 /r/n'.encode() )
-# reply = LSserial.readline()
-# print(reply)
-
-# LSserial.close()
+import time
+bits = serial.EIGHTBITS
+parity = serial.PARITY_NONE
+stopbits = serial.STOPBITS_ONE
 
 
-
-#%% Setup the connection here...
-
-#Setup the connection to the controller
-ser = serial.Serial("COM4", 9600, serial.SEVENBITS,
-    serial.PARITY_ODD, serial.STOPBITS_ONE )
+ser = serial.Serial("COM3", 9600, bits, parity, stopbits)
 #ser.baudrate = int(9600)
 #ser.port = "COM4"
 ser.timeout = int(5)
 #ser
-ser.open()
+# ser.open()
 
-#%%
+for i in range(5):
+    ser.reset_input_buffer()
+    # time.sleep()
+    # ser.write(b'*j01\r\n')
+    # time.sleep(0.1)
 
-ser.write('PID? 1\r\n'.encode())
-read_pressure_data = ser.readline()
-#ser.flush()
-a = str(read_pressure_data).split(",")
-test = read_pressure_data.decode()
+    ser.write(b'*S0\r\n')
+    time.sleep(0.2)
 
-test1 = bytes(a[0], 'utf-8')
+    while ser.in_waiting:
+        print(ser.readline())
+
 

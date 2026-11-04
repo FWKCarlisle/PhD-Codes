@@ -607,10 +607,10 @@ class Experiment_dfVmap(python_nano.python_Nanonis_TCP): # define child class fo
         
     def RunExperiment(self):
         # change bias slowly
-        self.Bias_set_slow(self.VForMoving, time_to_take_seconds=2,
-                           num_of_steps=100)
+        # self.Bias_set_slow(self.VForMoving, time_to_take_seconds=2,
+        #                    num_of_steps=100)
         
-        xAtoms, yAtoms = self.RealAtomPos()
+        xAtoms, yAtoms = [0,0]
         
         self.x, self.y, self.masks = self.Grid(xAtoms, yAtoms,
                                                self.upsampling, self.radSteps)

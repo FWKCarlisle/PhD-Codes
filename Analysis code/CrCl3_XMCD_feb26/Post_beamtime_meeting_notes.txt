@@ -1,0 +1,18 @@
+All XAS vs substrate. Does main peak shift? Peak width as well -> Avg_XAS. 5 peaks that Will fits
+
+Diamond vs Alba for detailed XMCD. Same shape? Any extra texture? Differences? Do the best ones look exactly the same? Just 2T 
+
+XMCD changes with Substrate. 2T compare best, subtle line changes. Lay on top and directly compare. 
+
+Alba angle dependence -> plot main peak for every angle we took. 
+
+Sum rules -> substrate to substrate deviations and synchrotron differences. N+E
+
+Hyst. loop -> 	XMCD: PC/NC Fudge factor, background fitting, peak fitting
+		Hyst: Energy or range or intergral or find max point
+
+
+-> I'm on XAS vs Sub, XMCD D V A, XMCD vs Sub, Angle dependence 
+
+So need to fit Voight to the 5 peaks and then output the position and width of each. Take the best spectra for each of XAS 2T and then fit and compare to other things. For D1, alba and D2
+

@@ -500,11 +500,4 @@ channel = 'OC M1 Freq. Shift [AVG] (Hz)'
 s = SpectrumAnalysis(channel, path, fileName)
 s.KPFMAnalysis(plotCalculation=True)
 # print(lmfit.fit_report(s.fit_info))
-
-# # path = 'test_files'
-# # fileName = 'dfVMap_InSb_20_00481.dat'
-# # channel = 'LI Demod 1 Y [AVG] (A)'
-# # s = SpectrumAnalysis(channel, path, fileName)
-# # s.DIDVAnalysis(plotCalculation=True)
-# # # print(lmfit.fit_report(s.fit_info))  
         

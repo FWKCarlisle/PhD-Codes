@@ -5,6 +5,10 @@ February 2025 beamtime XMCD analysis codes
 @author: Wstev
 """
 import matplotlib.pyplot as plt
+import matplotlib.cm as cm
+import matplotlib.colors as mcolors
+from mpl_toolkits.mplot3d import Axes3D
+
 import numpy as np
 from nexusformat.nexus import nxload
 from pathlib import Path
@@ -78,12 +82,12 @@ class XMCD_data_analysis(Nexus_handling):
 
         if len(XMCD_spectra_Set) != 1:
             for ﬁle_number in XMCD_spectra_Set: 
-                print(file_number)
+                # print(file_number)
                 data_set = self.open_single_spectra(ﬁle_number, directory_path,  ﬁle_preﬁx,sensor)
                 self.spectra.append(data_set)
                 self.energy = self.spectra[0]["x"]
         else:
-            print(XMCD_spectra_Set)
+            # print(XMCD_spectra_Set)
             data_set = self.open_single_spectra(XMCD_spectra_Set[0], directory_path,  ﬁle_preﬁx,sensor)
             self.spectra.append(data_set)
     
@@ -308,32 +312,52 @@ def method3(XMCD):
     
     return hyst_point, Bfield, temp
 
-def get_remenance(hyst, B):
+def get_remenance(hyst, B, print_bool=True):
 
     idx_list = []
-    
+    tolerance = 0.001
     for i, x in enumerate(B):
-        print(x)
-        if abs(x) == 0.0:
+        # print(x)
+        if abs(x) < tolerance:
+            if print_bool:
+                print(f"Found point {i} at {x}")
+
             idx_list.append(i)
     
-    i_1 = idx_list[0]
-    i_2 = idx_list[1]
+    if len(idx_list) != 2:
+        print("Wrong number of points")
+
+        i_1 = 0
+        i_2 = 0
+
+        rem_1 = 0
+        rem_2 = 0
+
+        remenance = None
+
+    else:
+        i_1 = idx_list[0]
+        i_2 = idx_list[1]
+        
+        rem_1 = hyst[i_1]
+        rem_2 = hyst[i_2]
+        if print_bool:
+            print(f"Rem 1 ({B[i_1]} ): {rem_1}, Rem 2 ({B[i_2]} ): {rem_2}, half_point: {0.5*(abs(rem_1) + abs(rem_2))}, full: {0.5*(abs(rem_1) + abs(rem_2)) - min(rem_1, rem_2)}")
+
     
-    rem_1 = hyst[i_1]
-    rem_2 = hyst[i_2]
-
-
-    print(f"Rem 1 ({B[i_1]} ): {rem_1}, Rem 2 ({B[i_2]} ): {rem_2}, half_point: {0.5*(abs(rem_1) + abs(rem_2))}, full: {0.5*(abs(rem_1) + abs(rem_2)) - min(rem_1, rem_2)}")
-
-    
-    remenance = 0.5*(abs(rem_1) + abs(rem_2)) 
+        remenance = 0.5*(abs(rem_1) + abs(rem_2)) 
 
     return remenance
     
+def get_file_name(file):
+
+    number = int(file.split("-")[2].split(".")[0])
+    return number
+    # Get the file name from the user
+
     
 
-def manual_hyst(data_dir,Yield = "TEY",file_name = "Manual_Hysteresis_1", normalisation=None,bounds =None, plot_xmcd=True, Label = False, scaling = None):
+def manual_hyst(data_dir,Yield = "TEY",file_name = "Manual_Hysteresis_1", normalisation=None,bounds =None, plot_xmcd=True, Label = False, scaling = None, output_file = r"PhD-Codes\Analysis code\Hysteresis\data_for_ppt\remenance.txt"):
     """
     
 
@@ -404,12 +428,16 @@ def manual_hyst(data_dir,Yield = "TEY",file_name = "Manual_Hysteresis_1", normal
     
     XMCDs = []
     integrations = []
+    temp_list = []
     if os.path.exists(rf"PhD-Codes\Analysis code\Hysteresis\{file_name}.pptx"):
         os.remove(rf"PhD-Codes\Analysis code\Hysteresis\{file_name}.pptx")
     prs = setup_presentation()
     for i, data in enumerate(final_pc):
         pc_TEY, pc_Bfield, pc_Fenergy, pc_temp, pc_file = data
         nc_TEY, nc_Bfield, nc_Fenergy, nc_temp, nc_file = final_nc[i]
+
+        # print(f"Processing {pc_file} - {nc_file} @ {pc_Bfield}/{nc_Bfield} @ {pc_temp}K")
+
         if scaling is not None:
             nc_TEY *= scaling
         XMCD = pc_TEY - nc_TEY
@@ -466,6 +494,24 @@ def manual_hyst(data_dir,Yield = "TEY",file_name = "Manual_Hysteresis_1", normal
             save_to_presentation(prs, r"PhD-Codes\Analysis code\Hysteresis\data_for_ppt\plot.png",filename = file_name)
     # print(len(XMCDs))
     plt.close("all")
+
+
+    #MvT
+    MvT = False
+    if MvT:
+        plt.figure(i+1)
+        print(type(temp_list), type(integrations))
+        print("temp_list:", temp_list)
+        print("integrations:", integrations)
+        for i, x in enumerate(temp_list):
+            save_remanence_and_temp_to_file(integrations[i], x,file_name, r"PhD-Codes\Analysis code\Hysteresis\data_for_ppt\mvt.txt")
+    
+        plt.scatter(temp_list,integrations, marker='o' ,label = "Integration")
+        plt.show()
+        plt.close("all")
+        
+
+
     plt.figure(len(final_pc)+2) 
     M1_hyst, M1_B = [], []
     M2_hyst, M2_B= [], []
@@ -524,18 +570,90 @@ def manual_hyst(data_dir,Yield = "TEY",file_name = "Manual_Hysteresis_1", normal
 
     plt.colorbar(label = "Index")
     plt.savefig(r"PhD-Codes\Analysis code\Hysteresis\data_for_ppt\plot.png")
-
+    print(f"Saving to {file_name}.pptx")
     save_to_presentation(prs, r"PhD-Codes\Analysis code\Hysteresis\data_for_ppt\plot.png",filename = file_name)
     # plt.show()
-    # remenance =  get_remenance(M3_hyst, M3_B)
+    remenance =  get_remenance(integrations, M3_B)
     plt.close("all")
-    return max(M3_hyst)#, remenance, remenance/max(M3_hyst)
+
+    output_file = r"PhD-Codes\Analysis code\Hysteresis\data_for_ppt\remenance.txt"
+    
+    temp = round(np.mean(temps),5)
+
+    save_remanence_and_temp_to_file(remenance, temp,file_name, output_file) #Turn on for everything but MvT
+
+    return [M3_B, integrations, remenance, temp]
+
+def save_remanence_and_temp_to_file(remanence, temp,file_name, output_file):
+    """
+    Save remanence and temperature values to a .txt file.
+    """
+    with open(output_file, 'a') as f:
+        if remanence is not None:  # Open in append mode to add new data
+            f.write(f"{file_name}, {temp:.5f}, {remanence:.5f}\n")  # Write temp and remanence separated by a tab
+
+
+def plot_all_hysteresis(list, bounds=[[-2.1,2.1],[-0.75,0.75]]):
+    plt.figure(1)
+
+    temps = [x[3] for x in list]  # Extract all temperature values
+    norm = mcolors.LogNorm(vmin=10, vmax=15)  # Normalize temps to [0, 1]
+    colormap = cm.inferno # Choose a colormap
+
+    fig = plt.figure(figsize=(12, 6))
+    ax = fig.add_subplot(111, projection='3d') #Get rid of this line to get rid of 3dness
+    for i, x in enumerate(list):
+        B = x[0]
+        integrations = x[1]
+        remenance = x[2]
+        temp = x[3]
+
+        marker = "x"
+        if temp < 1.6:  #3 for HOPG sets, still worms for BP 
+            marker = "o"
+            color = "orange"
+        elif temp < 3:  #3 for HOPG sets, still worms for BP 
+            marker = "o"
+            color = "red"
+        elif temp < 9:
+            color = "blue"
+        elif temp < 10:
+            color = "cyan"    
+        elif temp > 15.5:
+            color = "green"
+        else:
+            color = colormap(norm(temp))
+        
+        # Plot with the temperature-dependent color
+        
+        temps = np.full_like(B, temp)  # Create an array of the same size as B filled with the temperature value
+        ax.scatter(B, integrations, temps, marker=marker, color=color, label=f"{temp:.5f}K")  # Integration under curve, if not 3d get rid of temps
+    print(bounds)
+
+    if bounds is not None:
+                plt.xlim(bounds[0])
+                plt.ylim(bounds[1])
+    plt.axhline(y=0, color='black', linestyle='--', linewidth=0.8)
+    plt.axvline(x=0, color='black', linestyle='--', linewidth=0.8)
+    plt.legend()
+    ax.set_xlabel("$B_z (T)$")
+    ax.set_ylabel("$XMCD_{Norm}$")
+    ax.set_zlabel("Temperature (K)")
+    plt.title("All Hysteresis")
+
+    # sm = plt.cm.ScalarMappable(cmap=colormap, norm=norm)
+    # sm.set_array([])  # Required for ScalarMappable
+    # plt.colorbar(sm,ax=plt.gca(), label="Temperature")
+    plt.show()
+
+    
+
 
 def setup_presentation():
     prs = pptx.Presentation()
     return prs
 
-def save_to_presentation(prs,image_path, filename = "presentation"):
+def save_to_presentation(prs,image_path,  filename = "presentation"):
     slide_layout = prs.slide_layouts[5]
     slide = prs.slides.add_slide(slide_layout)
     
@@ -552,26 +670,40 @@ def save_to_presentation(prs,image_path, filename = "presentation"):
 
     # print(f"Presentation saved as {pptx_filename}")
 
+directory_path = r"C:\Users\ppxfc1\OneDrive - The University of Nottingham\Desktop\PhD\CrCl3\MM38256-1\BP1\Hysteresis_analysis"
+# directory_path = r"C:\Users\ppxfc1\OneDrive - The University of Nottingham\Desktop\PhD\CrCl3\MM38256-1\BP1\XMCD"
 
-print("Saved Code")
-directory_path = r"C:\Users\ppxfc1\OneDrive - The University of Nottingham\Desktop\PhD\CrCl3\MM38256-1\HOPG1\Hysteresis_analysis"
 ﬁle_preﬁx = "i06-1-"
-in_bounds = [[-0.1,0.1],[-0.1,0.1]]
-print("ALL GOOD HERE BOSS: ", datetime.datetime.now())
-# list = ["2k","2k_2","2k_GI","2k_NI","8k","10k","11.8k","11k","12.2k","12.4","12.5k","12.5k_2","12.6_2",]
-# list = ["BP_12.4k","12.6k","12.7k","12.8k","12.8k_2","12.9k","12k","12k_2","13.2k","13k","13k_2","14k","15k","17k", ]
+in_bounds = [[-2.05,2.05],[-0.85,0.85]]
 
-list = ["1","2","3","4","5","6","7","10k","11k","12.5k","12k","12k_2","13.5k","13k","14k","14k_2","20k",]
+final_bounds =  [[-2.05,2.05],[-0.85,0.85]] #[[-0.07,2.05],[-0.2,0.75]]
+
+output_file = r"PhD-Codes\Analysis code\Hysteresis\data_for_ppt\remenance.txt"
+# Clear the contents of the file before writing new data
+with open(output_file, 'w') as f:
+    pass  # Write an empty string to clear the file
+# with open(r"PhD-Codes\Analysis code\Hysteresis\data_for_ppt\mvt.txt", 'w') as f:
+#     pass
+print("ALL GOOD HERE BOSS: ", datetime.datetime.now())
+list = ["2k_GI","2k_NI","8k","10k","11k","11.8k","12k_2","12k","12.2k","12.4","BP_12.4k","12.5k","12.5k_2","12.6_2","12.6k","12.7k","12.8k_2","12.8k","12.9k","13k","13k_2","13.2k","14k","15k","17k",]
+# #  #Remove all but 6 and 7 for HOPG as this is just best 
+# "2k","2k_2",,
+# "1","2","3","4","5",
+# list = ["13k","6","7","10k","12k","12k_2","12.5k","13.5k","14k_2","14k","11k","20k"] #11k is actually 14.3k
+# list = ["Step","Step_2"]
+lists = []
+
 for i, x in enumerate(list):
     if x[0] == "B":
         file_name = x
     else:
-        # file_name = f"Hyst_{x}"
-        file_name = f"Manual_Hysteresis_{x}"
+        file_name = f"Hyst_{x}" #BP
+        # file_name = f"Manual_Hysteresis_{x}" #HOPG
+        # file_name = x #MvT
     file_path = Path(directory_path + f"/{file_name}/")
-    manual_hyst(file_path,plot_xmcd=True,bounds = ([-2.1,2.1],[-1.5,1.5]), file_name=file_name)
+    list_data = manual_hyst(file_path,plot_xmcd=True,bounds = in_bounds, file_name=file_name, output_file=output_file)
+    lists.append(list_data)
 
-
-
+plot_all_hysteresis(lists, bounds = final_bounds)
 
 

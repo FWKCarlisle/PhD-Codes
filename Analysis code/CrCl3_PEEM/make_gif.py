@@ -9,6 +9,12 @@ from tkinter.filedialog import askdirectory
 from PIL import Image, ImageChops
 import numpy as np
 import matplotlib.pyplot as plt
+import time
+from skimage.io import imread, imshow
+from skimage.draw import disk
+from skimage.morphology import (erosion, dilation, closing, opening,
+                                area_closing, area_opening)
+from skimage.color import rgb2gray
 
 def threshold_image(image, threshold_value: int = 50,background_img = None):
     '''
@@ -22,6 +28,7 @@ def threshold_image(image, threshold_value: int = 50,background_img = None):
     else:
         max_value = np.max(image)
     # print(threshold_value)
+    # print(threshold_value)
     image[image < (threshold_value / 100) * max_value] = 0
     image[image > (threshold_value / 100) * max_value] = 255
 
@@ -31,18 +38,48 @@ def threshold_image(image, threshold_value: int = 50,background_img = None):
 def calculate_average_brightness(image):
     return np.mean(image)
 
+def apply_morphology(image, num_iterations: int = 10):
+    # print("Applying morphology")
+    element = np.array([[0,0,0,0,0,0,0],
+                        [0,0,1,1,1,0,0],
+                        [0,1,1,1,1,1,0],
+                        [0,1,1,1,1,1,0],
+                        [0,1,1,1,1,1,0],
+                        [0,0,1,1,1,0,0],
+                        [0,0,0,0,0,0,0]], dtype=bool)
+    
+    element = np.array([[0,0,0,0,0],
+                        [0,0,1,0,0],
+                        [0,1,1,1,0],
+                        [0,0,1,0,0],
+                        [0,0,0,0,0]], dtype=bool)
+    
+    element = np.array([[0,1,0],
+                        [1,1,1],
+                        [0,1,0]],
+                         dtype=bool)
 
-def find_area_of_interest(image, threshold_value: int = 50):
-    ### Find the area of the avg island in the image
+    # plt.imshow(element, cmap='gray')
 
-    print("Test")
-    return 1
+    image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+
+    for i in range(num_iterations):
+        image = erosion(image, element)
+
+    image = opening(image)
+
+    for i in range(num_iterations):
+        image = dilation(image, element)
+
+    image = area_opening(area_closing(image, 1000), 1000)
+    # plt.imshow(image)
+    # plt.show()
+    return image
 
 def find_islands(image_np, show_img = False, line_y = 513):
 # Convert to grayscale
 
     image = cv2.cvtColor(image_np, cv2.COLOR_RGB2BGR)
-
 
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
@@ -65,8 +102,10 @@ def find_islands(image_np, show_img = False, line_y = 513):
     # Filter out small islands (e.g., noise)
     min_area = 50  # Adjust based on your image
     max_area = 2250
+    max_area = 2250
 
     
+    filtered_contours = [cnt for cnt in contours if cv2.contourArea(cnt) > min_area and cv2.contourArea(cnt) < max_area]     
     filtered_contours = [cnt for cnt in contours if cv2.contourArea(cnt) > min_area and cv2.contourArea(cnt) < max_area]     
 
     # Sort contours by area (largest first)
@@ -74,6 +113,7 @@ def find_islands(image_np, show_img = False, line_y = 513):
 
     # Remove the largest contour (assumed to be the background)
     if len(filtered_contours) > 1:
+        filtered_contours = filtered_contours[1:]  # Keep all but the largest
         filtered_contours = filtered_contours[1:]  # Keep all but the largest
 
     # Define alternating colors for filling
@@ -216,12 +256,15 @@ def make_movie(dirname: Path, FPS: int = 20, gif_name: str = "made_gif.mp4", inv
             if not(threshold or invert):
                 image_np = imageio.imread(filename)
 
+            image_np = np.array(image, dtype=np.uint8)
+
+            image_np = apply_morphology(image_np, num_iterations=5)
+
+
             img_brightness = calculate_average_brightness(image_np)
 
             brighnesses.append(img_brightness)   
             
-            
-            image_np = image_np.astype(np.uint8)
             new_image = Image.fromarray(image_np)
             
             if contour:
@@ -296,6 +339,7 @@ def make_movie(dirname: Path, FPS: int = 20, gif_name: str = "made_gif.mp4", inv
         plt.show()
 
     print(f"Finished, threshold: {threshold}, invert: {invert}, contour: {contour}")
+    print(f"Finished, threshold: {threshold}, invert: {invert}, contour: {contour}")
     return output
 
 
@@ -316,9 +360,13 @@ def make_gif_options( directory=None, name="made_gif.gif", pop_up=False,invert =
     print(f"finished making gif of name {name}")
 
 if __name__ == "__main__":
-    directory = "C:/Users/ppxfc1/OneDrive - The University of Nottingham/Desktop/PhD/CrCl3/SiC/6727"
-    # directory = "C:/Users/ppxfc1/OneDrive - The University of Nottingham/Desktop/PhD/CrCl3/HOPG/7050"
+    # directory = "C:/Users/ppxfc1/OneDrive - The University of Nottingham/Desktop/PhD/CrCl3/SiC/6727"
+    directory = "C:/Users/ppxfc1/OneDrive - The University of Nottingham/Desktop/PhD/CrCl3/HOPG/7050"
 
     name = "made_gif.mp4"
+    inital_time = time.time()
     make_gif_options(directory=directory, name=name,save_images=True,
-                     threshold=88,invert=True, contour=True)
+                     threshold=None,invert=True, contour=False)
+    final_time = time.time()
+    elasped_time = final_time - inital_time
+    print(f"Time taken: {(elasped_time):.2f} seconds/{(elasped_time/60):.2f} ")

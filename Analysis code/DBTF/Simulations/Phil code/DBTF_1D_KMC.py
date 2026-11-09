@@ -25,6 +25,106 @@ MIN_EVENTS_FOR_MULTIPROCESSING = 100_000
 _PROCESS_PROGRESS_QUEUE: MultiprocessingQueue | None = None
 
 
+@dataclass(frozen=True)
+class CooldownProfile:
+    time_s: np.ndarray
+    measured_temperature_k: np.ndarray
+    fit_time_s: np.ndarray
+    fitted_temperature_k: np.ndarray
+    residuals_k: np.ndarray
+
+
+def load_cooldown_profile(path: str) -> CooldownProfile:
+    """Load datetime/temperature rows and fit a smooth cubic cooldown trend."""
+    try:
+        with open(path, newline="", encoding="utf-8-sig") as csv_file:
+            reader = csv.DictReader(csv_file)
+            if reader.fieldnames is None:
+                raise ValueError("The cooldown CSV is empty or has no header.")
+            columns = {
+                name.strip().lower(): name
+                for name in reader.fieldnames
+                if name is not None
+            }
+            if "datetime" not in columns or "temperature" not in columns:
+                raise ValueError(
+                    "The cooldown CSV must contain 'datetime' and 'temperature' columns."
+                )
+
+            timestamps: list[datetime] = []
+            temperatures: list[float] = []
+            for row_number, row in enumerate(reader, start=2):
+                try:
+                    timestamps.append(
+                        datetime.fromisoformat(row[columns["datetime"]].strip())
+                    )
+                    temperatures.append(float(row[columns["temperature"]]))
+                except (AttributeError, TypeError, ValueError) as exc:
+                    raise ValueError(
+                        f"Invalid datetime or temperature in CSV row {row_number}."
+                    ) from exc
+    except OSError as exc:
+        raise ValueError(f"Could not read cooldown CSV '{path}': {exc}") from exc
+    except csv.Error as exc:
+        raise ValueError(f"Could not parse cooldown CSV '{path}': {exc}") from exc
+
+    if len(timestamps) < 5:
+        raise ValueError(
+            "The smoothed cooldown fit requires at least five measurements."
+        )
+
+    try:
+        ordered_measurements = sorted(zip(timestamps, temperatures))
+        timestamps, temperatures = map(list, zip(*ordered_measurements))
+        time_s = np.asarray(
+            [(timestamp - timestamps[0]).total_seconds() for timestamp in timestamps],
+            dtype=float,
+        )
+    except TypeError as exc:
+        raise ValueError(
+            "Cooldown timestamps must use a consistent timezone format."
+        ) from exc
+
+    measured_temperature_k = np.asarray(temperatures, dtype=float)
+    if (
+        not np.all(np.isfinite(time_s))
+        or not np.all(np.diff(time_s) > 0)
+        or not np.all(np.isfinite(measured_temperature_k))
+        or np.any(measured_temperature_k <= 0)
+    ):
+        raise ValueError(
+            "Cooldown timestamps must increase strictly and temperatures must be "
+            "finite and greater than zero kelvin."
+        )
+
+    duration_s = float(time_s[-1])
+    normalized_time = time_s / duration_s
+    polynomial = np.polynomial.Polynomial.fit(
+        normalized_time, measured_temperature_k, deg=3
+    )
+    fit_time_s = np.linspace(0.0, duration_s, 201)
+    fitted_temperature_k = np.asarray(
+        polynomial(fit_time_s / duration_s), dtype=float
+    )
+    residuals_k = measured_temperature_k - polynomial(normalized_time)
+    if (
+        not np.all(np.isfinite(fitted_temperature_k))
+        or np.any(fitted_temperature_k <= 0)
+        or not np.all(np.isfinite(residuals_k))
+    ):
+        raise ValueError(
+            "The smoothed cooldown fit produced invalid temperatures; check the CSV data."
+        )
+
+    return CooldownProfile(
+        time_s=time_s,
+        measured_temperature_k=measured_temperature_k,
+        fit_time_s=fit_time_s,
+        fitted_temperature_k=fitted_temperature_k,
+        residuals_k=np.asarray(residuals_k, dtype=float),
+    )
+
+
 def _initialize_process_worker(progress_queue: MultiprocessingQueue) -> None:
     global _PROCESS_PROGRESS_QUEUE
     _PROCESS_PROGRESS_QUEUE = progress_queue
@@ -42,6 +142,8 @@ class SimulationConfig:
     show_live_view: bool = False
     live_temperature_k: float | None = None
     process_count: int = 1
+    cooldown_profile: CooldownProfile | None = None
+    show_cooldown_diagnostics: bool = False
 
 
 class OneDimensionalKMC:
@@ -97,6 +199,59 @@ class OneDimensionalKMC:
             while hop_update is not None and total_hops - last_reported_hops >= 1000:
                 last_reported_hops += 1000
                 hop_update(last_reported_hops)
+
+        if self.config.cooldown_profile is not None:
+            profile = self.config.cooldown_profile
+            estimated_hops = 0.0
+            with np.errstate(over="ignore"):
+                for _, barrier_mev, dwell_time_s in self.config.conditions:
+                    if dwell_time_s == 0:
+                        continue
+                    rates = self.config.attempt_frequency_hz * np.exp(
+                        -barrier_mev
+                        / (
+                            BOLTZMANN_MEV_PER_K
+                            * profile.fitted_temperature_k
+                        )
+                    )
+                    estimated_hops += (
+                        2
+                        * self.config.cycles
+                        * float(
+                            np.sum(
+                                (rates[:-1] + rates[1:])
+                                * np.diff(profile.fit_time_s)
+                                / 2
+                            )
+                        )
+                    )
+            process_pool: ProcessPoolExecutor | None = None
+            progress_queue: MultiprocessingQueue | None = None
+            if (
+                self.config.process_count > 1
+                and estimated_hops >= MIN_EVENTS_FOR_MULTIPROCESSING
+            ):
+                context = multiprocessing.get_context("spawn")
+                progress_queue = context.Queue()
+                process_pool = ProcessPoolExecutor(
+                    max_workers=self.config.process_count,
+                    mp_context=context,
+                    initializer=_initialize_process_worker,
+                    initargs=(progress_queue,),
+                )
+            try:
+                results = self._run_cooldown(
+                    rng, record_hops, process_pool, progress_queue
+                )
+            finally:
+                if process_pool is not None:
+                    process_pool.shutdown()
+                if progress_queue is not None:
+                    progress_queue.close()
+                    progress_queue.join_thread()
+            if hop_update is not None and total_hops != last_reported_hops:
+                hop_update(total_hops)
+            return results
 
         process_pool: ProcessPoolExecutor | None = None
         progress_queue: MultiprocessingQueue | None = None
@@ -213,6 +368,154 @@ class OneDimensionalKMC:
             hop_update(total_hops)
         return results
 
+    def _run_cooldown(
+        self,
+        rng: np.random.Generator,
+        record_hops: Callable[[int], None],
+        process_pool: ProcessPoolExecutor | None = None,
+        progress_queue: MultiprocessingQueue | None = None,
+    ) -> list[dict[str, float | int | bool | str]]:
+        profile = self.config.cooldown_profile
+        if profile is None:
+            raise ValueError("A cooldown profile is required for cooldown simulation.")
+
+        duration_s = float(profile.time_s[-1])
+        results: list[dict[str, float | int | bool | str]] = []
+        next_batch_id = 0
+
+        for mode, barrier_mev, dwell_time_s in self.config.conditions:
+            if dwell_time_s == 0:
+                cycle_end_times = np.asarray([0.0])
+            else:
+                cycle_end_times = np.arange(
+                    dwell_time_s, duration_s, dwell_time_s, dtype=float
+                )
+                if cycle_end_times.size == 0 or cycle_end_times[-1] < duration_s:
+                    cycle_end_times = np.append(cycle_end_times, duration_s)
+
+            for cycle_end_s in cycle_end_times:
+                cycle_start_s = max(0.0, float(cycle_end_s) - dwell_time_s)
+                interval_s = float(cycle_end_s) - cycle_start_s
+                temperature_k = float(
+                    np.interp(
+                        cycle_end_s,
+                        profile.fit_time_s,
+                        profile.fitted_temperature_k,
+                    )
+                )
+                if interval_s == 0:
+                    segment_durations = np.asarray([], dtype=float)
+                    segment_rates = np.asarray([], dtype=float)
+                else:
+                    integration_points = max(
+                        2,
+                        int(
+                            np.ceil(
+                                self.config.temperatures_k.size
+                                * interval_s
+                                / duration_s
+                            )
+                        )
+                        + 1,
+                    )
+                    sample_times = np.linspace(
+                        cycle_start_s, cycle_end_s, integration_points + 1
+                    )
+                    midpoint_times = (sample_times[:-1] + sample_times[1:]) / 2
+                    midpoint_temperatures = np.interp(
+                        midpoint_times,
+                        profile.fit_time_s,
+                        profile.fitted_temperature_k,
+                    )
+                    with np.errstate(over="ignore"):
+                        rates = self.config.attempt_frequency_hz * np.exp(
+                            -barrier_mev
+                            / (BOLTZMANN_MEV_PER_K * midpoint_temperatures)
+                        )
+                    segment_durations = np.diff(sample_times)
+                    segment_rates = rates
+                    expected_hops_each_direction = float(
+                        np.sum(segment_rates * segment_durations)
+                    )
+                    if (
+                        not np.isfinite(expected_hops_each_direction)
+                        or expected_hops_each_direction
+                        > np.iinfo(np.int64).max / 4
+                    ):
+                        raise ValueError(
+                            "The expected number of hops is too large to simulate. "
+                            "Reduce the attempt frequency or time away."
+                        )
+                    if np.any(~np.isfinite(segment_rates)) or np.any(
+                        segment_rates > np.finfo(float).max / 2
+                    ):
+                        raise ValueError(
+                            "The calculated hopping rate is too large. "
+                            "Reduce the attempt frequency or energy barrier."
+                        )
+
+                recovered = 0
+                if process_pool is not None and progress_queue is not None:
+                    recovered, next_batch_id = self._run_parallel_cooldown_condition(
+                        process_pool,
+                        progress_queue,
+                        rng,
+                        segment_rates,
+                        segment_durations,
+                        next_batch_id,
+                        record_hops,
+                    )
+                else:
+                    for _ in range(self.config.cycles):
+                        displacement_sites = 0
+                        for rate_per_direction, segment_duration in zip(
+                            segment_rates, segment_durations
+                        ):
+                            if (
+                                not np.isfinite(rate_per_direction)
+                                or rate_per_direction > np.finfo(float).max / 2
+                            ):
+                                raise ValueError(
+                                    "The calculated hopping rate is too large. "
+                                    "Reduce the attempt frequency or energy barrier."
+                                )
+                            displacement_sites += self._simulate_trajectory(
+                                rng,
+                                float(rate_per_direction),
+                                float(segment_duration),
+                                on_hop=record_hops,
+                            )
+                        displacement_nm = (
+                            abs(displacement_sites)
+                            * self.config.lattice_spacing_nm
+                        )
+                        if displacement_nm <= self.config.molecule_length_nm / 2:
+                            recovered += 1
+                probability = recovered / self.config.cycles
+                results.append(
+                    {
+                        "mode": mode,
+                        "temperature_k": temperature_k,
+                        "time_s": float(cycle_end_s),
+                        "dwell_time_s": dwell_time_s,
+                        "barrier_mev": barrier_mev,
+                        "recovered": recovered,
+                        "cycles": self.config.cycles,
+                        "probability": probability,
+                        "standard_error": float(
+                            np.sqrt(
+                                probability * (1.0 - probability)
+                                / self.config.cycles
+                            )
+                        ),
+                        "molecule_length_nm": self.config.molecule_length_nm,
+                        "lattice_spacing_nm": self.config.lattice_spacing_nm,
+                        "attempt_frequency_hz": self.config.attempt_frequency_hz,
+                    }
+                )
+
+        return results
+
     def _run_parallel_condition(
         self,
         process_pool: ProcessPoolExecutor,
@@ -238,6 +541,74 @@ class OneDimensionalKMC:
                     batch_cycles,
                     rate_per_direction,
                     dwell_time_s,
+                    self.config.molecule_length_nm,
+                    self.config.lattice_spacing_nm,
+                ),
+            )
+            futures[future] = batch_id
+            batch_id += 1
+
+        pending = set(futures)
+        completed: set[int] = set()
+        reported_by_batch: dict[int, int] = {}
+        recovered = 0
+
+        def drain_progress_queue() -> None:
+            while True:
+                try:
+                    queued_batch_id, hop_increment = progress_queue.get_nowait()
+                except queue.Empty:
+                    return
+                if queued_batch_id not in completed:
+                    reported_by_batch[queued_batch_id] = (
+                        reported_by_batch.get(queued_batch_id, 0) + hop_increment
+                    )
+                    hop_update(hop_increment)
+
+        while pending:
+            drain_progress_queue()
+            finished, pending = wait(
+                pending, timeout=0.1, return_when=FIRST_COMPLETED
+            )
+            for future in finished:
+                completed_batch_id, batch_recovered, batch_hops = future.result()
+                drain_progress_queue()
+                unreported_hops = (
+                    batch_hops - reported_by_batch.get(completed_batch_id, 0)
+                )
+                if unreported_hops > 0:
+                    hop_update(unreported_hops)
+                completed.add(completed_batch_id)
+                recovered += batch_recovered
+
+        drain_progress_queue()
+        return recovered, batch_id
+
+    def _run_parallel_cooldown_condition(
+        self,
+        process_pool: ProcessPoolExecutor,
+        progress_queue: MultiprocessingQueue,
+        rng: np.random.Generator,
+        segment_rates: np.ndarray,
+        segment_durations: np.ndarray,
+        first_batch_id: int,
+        hop_update: Callable[[int], None],
+    ) -> tuple[int, int]:
+        batch_count = self.config.process_count * 4
+        batch_size = max(1, (self.config.cycles + batch_count - 1) // batch_count)
+        futures = {}
+        batch_id = first_batch_id
+        for start in range(0, self.config.cycles, batch_size):
+            batch_cycles = min(batch_size, self.config.cycles - start)
+            seed = int(rng.integers(0, np.iinfo(np.int64).max))
+            future = process_pool.submit(
+                _simulate_cooldown_trajectory_batch,
+                (
+                    batch_id,
+                    seed,
+                    batch_cycles,
+                    tuple(map(float, segment_rates)),
+                    tuple(map(float, segment_durations)),
                     self.config.molecule_length_nm,
                     self.config.lattice_spacing_nm,
                 ),
@@ -437,6 +808,49 @@ def _simulate_trajectory_batch(
     return batch_id, recovered, total_hops
 
 
+def _simulate_cooldown_trajectory_batch(
+    task: tuple[
+        int, int, int, tuple[float, ...], tuple[float, ...], float, float
+    ],
+) -> tuple[int, int, int]:
+    (
+        batch_id,
+        seed,
+        cycles,
+        segment_rates,
+        segment_durations,
+        molecule_length,
+        spacing,
+    ) = task
+    rng = np.random.default_rng(seed)
+    recovered = 0
+    total_hops = 0
+
+    def report_hops(count: int) -> None:
+        nonlocal total_hops
+        previous_hops = total_hops
+        total_hops += count
+        completed_thousands = total_hops // 1000 - previous_hops // 1000
+        if completed_thousands and _PROCESS_PROGRESS_QUEUE is not None:
+            _PROCESS_PROGRESS_QUEUE.put((batch_id, completed_thousands * 1000))
+
+    for _ in range(cycles):
+        displacement_sites = sum(
+            OneDimensionalKMC._simulate_trajectory(
+                rng,
+                rate_per_direction,
+                segment_duration,
+                on_hop=report_hops,
+            )
+            for rate_per_direction, segment_duration in zip(
+                segment_rates, segment_durations
+            )
+        )
+        if abs(displacement_sites) * spacing <= molecule_length / 2:
+            recovered += 1
+    return batch_id, recovered, total_hops
+
+
 class SimulationWorker(QtCore.QObject):
     finished = QtCore.pyqtSignal(object)
     failed = QtCore.pyqtSignal(str)
@@ -534,6 +948,58 @@ class LiveKMCWindow(QtWidgets.QDialog):
         self.canvas.draw_idle()
 
 
+class CooldownDiagnosticsWindow(QtWidgets.QDialog):
+    def __init__(self, parent: QtWidgets.QWidget) -> None:
+        super().__init__(parent)
+        self.setWindowTitle("Cooldown temperature comparison")
+        self.resize(800, 700)
+        layout = QtWidgets.QVBoxLayout(self)
+        self.figure = Figure(figsize=(8, 7))
+        self.canvas = FigureCanvas(self.figure)
+        layout.addWidget(self.canvas)
+
+    def show_profile(self, profile: CooldownProfile) -> None:
+        self.figure.clear()
+        temperature_axes, residual_axes = self.figure.subplots(
+            2, 1, sharex=True, gridspec_kw={"height_ratios": [2, 1]}
+        )
+        temperature_axes.plot(
+            profile.time_s,
+            profile.measured_temperature_k,
+            "o",
+            markersize=3,
+            label="Measured CSV temperatures",
+        )
+        temperature_axes.plot(
+            profile.fit_time_s,
+            profile.fitted_temperature_k,
+            color="tab:orange",
+            label="Smoothed cubic trend",
+        )
+        temperature_axes.set_ylabel("Temperature (K)")
+        temperature_axes.set_title("Measured and smoothed cooldown")
+        temperature_axes.grid(True, alpha=0.25)
+        temperature_axes.legend()
+
+        residual_axes.axhline(0.0, color="0.35", linestyle="--", linewidth=1)
+        residual_axes.plot(
+            profile.time_s,
+            profile.residuals_k,
+            "o-",
+            markersize=3,
+            color="tab:green",
+        )
+        residual_axes.set_xlabel("Elapsed cooldown time (s)")
+        residual_axes.set_ylabel("Measured − fitted (K)")
+        residual_axes.set_title("Temperature-fit residuals")
+        residual_axes.grid(True, alpha=0.25)
+        self.figure.tight_layout()
+        self.canvas.draw_idle()
+        self.show()
+        self.raise_()
+        self.activateWindow()
+
+
 class KMCMainWindow(QtWidgets.QMainWindow):
     def __init__(self) -> None:
         super().__init__()
@@ -543,7 +1009,13 @@ class KMCMainWindow(QtWidgets.QMainWindow):
         self._thread: QtCore.QThread | None = None
         self._worker: SimulationWorker | None = None
         self.live_window: LiveKMCWindow | None = None
+        self.last_config: SimulationConfig | None = None
+        self.cooldown_diagnostics_window = CooldownDiagnosticsWindow(self)
         self.axes: list = []
+        self._simulation_started_at: float | None = None
+        self._elapsed_timer = QtCore.QTimer(self)
+        self._elapsed_timer.setInterval(60_000)
+        self._elapsed_timer.timeout.connect(self._update_elapsed_time)
 
         root = QtWidgets.QWidget()
         layout = QtWidgets.QVBoxLayout(root)
@@ -556,7 +1028,12 @@ class KMCMainWindow(QtWidgets.QMainWindow):
         layout.addWidget(self.canvas, stretch=1)
 
         self.status_label = QtWidgets.QLabel("Ready.")
-        layout.addWidget(self.status_label)
+        self.elapsed_time_label = QtWidgets.QLabel()
+        status_layout = QtWidgets.QHBoxLayout()
+        status_layout.addWidget(self.status_label)
+        status_layout.addWidget(self.elapsed_time_label)
+        status_layout.addStretch(1)
+        layout.addLayout(status_layout)
         hop_progress_layout = QtWidgets.QHBoxLayout()
         self.hop_count_label = QtWidgets.QLabel("Hop events: 0")
         hop_progress_layout.addWidget(self.hop_count_label)
@@ -582,6 +1059,11 @@ class KMCMainWindow(QtWidgets.QMainWindow):
         self.temperature_min_spin = self._float_control(1.0, 5.0, 1.0, 2) 
         self.temperature_max_spin = self._float_control(1.0, 5.0, 5.0, 2)
         self.temperature_count_spin = self._integer_control(2, 1000, 50)
+        self.temperature_count_label = QtWidgets.QLabel("Number of temperatures")
+        self.temperature_count_spin.setToolTip(
+            "In cooldown mode, controls the numerical resolution used to integrate "
+            "the temperature-dependent hop rate."
+        )
         self.dwell_time_spin = self._float_control(0.0, 1e12, 1, 12)
         self.time_min_spin = self._float_control(0.0, 1e12, 0.01, 12)
         self.time_max_spin = self._float_control(0.0, 1e12, 5, 12)
@@ -605,8 +1087,34 @@ class KMCMainWindow(QtWidgets.QMainWindow):
         form.addRow("Attempt frequency (Hz; e.g. 1e12)", self.attempt_edit)
         form.addRow("Minimum temperature (K)", self.temperature_min_spin)
         form.addRow("Maximum temperature (K)", self.temperature_max_spin)
-        form.addRow("Number of temperatures", self.temperature_count_spin)
+        form.addRow(self.temperature_count_label, self.temperature_count_spin)
         form.addRow("Single-run / barrier-sweep time away (s)", self.dwell_time_spin)
+
+        cooldown_group = QtWidgets.QGroupBox("Optional measured cooldown")
+        cooldown_layout = QtWidgets.QGridLayout(cooldown_group)
+        self.cooldown_profile_check = QtWidgets.QCheckBox(
+            "Use a smoothed temperature profile from CSV"
+        )
+        self.cooldown_profile_check.setToolTip(
+            "Cycles the tip away and back using the measured temperature history "
+            "until the CSV cooldown ends."
+        )
+        self.cooldown_path_edit = QtWidgets.QLineEdit()
+        self.cooldown_path_edit.setReadOnly(True)
+        self.cooldown_path_edit.setPlaceholderText(
+            "Select a CSV with datetime and temperature columns"
+        )
+        self.cooldown_browse_button = QtWidgets.QPushButton("Choose CSV…")
+        self.cooldown_browse_button.clicked.connect(self._choose_cooldown_csv)
+        self.cooldown_diagnostics_check = QtWidgets.QCheckBox(
+            "Show temperature fit and residuals"
+        )
+        self.cooldown_diagnostics_check.setChecked(True)
+        cooldown_layout.addWidget(self.cooldown_profile_check, 0, 0, 1, 2)
+        cooldown_layout.addWidget(self.cooldown_path_edit, 1, 0)
+        cooldown_layout.addWidget(self.cooldown_browse_button, 1, 1)
+        cooldown_layout.addWidget(self.cooldown_diagnostics_check, 2, 0, 1, 2)
+        form.addRow(cooldown_group)
 
         plot_options = QtWidgets.QGroupBox("Plots to generate")
         options_layout = QtWidgets.QGridLayout(plot_options)
@@ -659,13 +1167,33 @@ class KMCMainWindow(QtWidgets.QMainWindow):
         self.time_sweep_check.toggled.connect(self._update_plot_controls)
         self.barrier_sweep_check.toggled.connect(self._update_plot_controls)
         self.live_view_check.toggled.connect(self._update_plot_controls)
+        self.cooldown_profile_check.toggled.connect(self._update_plot_controls)
         self._update_plot_controls()
         return group
 
+    def _choose_cooldown_csv(self) -> None:
+        path, _ = QtWidgets.QFileDialog.getOpenFileName(
+            self,
+            "Choose measured cooldown CSV",
+            "",
+            "CSV files (*.csv);;All files (*)",
+        )
+        if path:
+            self.cooldown_path_edit.setText(path)
+
     def _update_plot_controls(self) -> None:
+        cooldown = self.cooldown_profile_check.isChecked()
         single = self.single_plot_check.isChecked()
         time_sweep = self.time_sweep_check.isChecked()
         barrier_sweep = self.barrier_sweep_check.isChecked()
+        self.temperature_min_spin.setEnabled(not cooldown)
+        self.temperature_max_spin.setEnabled(not cooldown)
+        self.temperature_count_label.setText(
+            "Cooldown integration points"
+            if cooldown
+            else "Number of temperatures"
+        )
+        self.temperature_count_spin.setEnabled(True)
         self.barrier_spin.setEnabled(single or time_sweep)
         self.dwell_time_spin.setEnabled(single or barrier_sweep)
         for control in (
@@ -680,7 +1208,13 @@ class KMCMainWindow(QtWidgets.QMainWindow):
             self.barrier_count_spin,
         ):
             control.setEnabled(barrier_sweep)
-        self.live_temperature_spin.setEnabled(self.live_view_check.isChecked())
+        self.live_view_check.setEnabled(not cooldown)
+        self.live_temperature_spin.setEnabled(
+            not cooldown and self.live_view_check.isChecked()
+        )
+        self.cooldown_path_edit.setEnabled(cooldown)
+        self.cooldown_browse_button.setEnabled(cooldown)
+        self.cooldown_diagnostics_check.setEnabled(cooldown)
 
     @staticmethod
     def _integer_control(minimum: int, maximum: int, value: int) -> QtWidgets.QSpinBox:
@@ -719,7 +1253,13 @@ class KMCMainWindow(QtWidgets.QMainWindow):
             raise ValueError(
                 "Enter a valid attempt frequency, for example 1e12."
             ) from exc
-        if maximum_temperature < minimum_temperature:
+        cooldown_profile = None
+        if self.cooldown_profile_check.isChecked():
+            path = self.cooldown_path_edit.text().strip()
+            if not path:
+                raise ValueError("Choose a cooldown CSV before running this mode.")
+            cooldown_profile = load_cooldown_profile(path)
+        elif maximum_temperature < minimum_temperature:
             raise ValueError("Maximum temperature must be at least the minimum.")
         if not np.isfinite(attempt_frequency) or attempt_frequency <= 0:
             raise ValueError("Attempt frequency must be finite and greater than zero.")
@@ -755,24 +1295,40 @@ class KMCMainWindow(QtWidgets.QMainWindow):
             raise ValueError("Select at least one plot option.")
 
         seed = self.seed_spin.value()
+        if cooldown_profile is not None:
+            temperatures = np.linspace(
+                cooldown_profile.fitted_temperature_k[0],
+                cooldown_profile.fitted_temperature_k[-1],
+                self.temperature_count_spin.value(),
+            )
+        else:
+            temperatures = np.linspace(
+                minimum_temperature,
+                maximum_temperature,
+                self.temperature_count_spin.value(),
+            )
         return SimulationConfig(
             molecule_length_nm=self.length_spin.value(),
             lattice_spacing_nm=self.spacing_spin.value(),
             attempt_frequency_hz=attempt_frequency,
-            temperatures_k=np.linspace(
-                minimum_temperature,
-                maximum_temperature,
-                self.temperature_count_spin.value(),
-            ),
+            temperatures_k=temperatures,
             conditions=tuple(conditions),
             cycles=self.cycles_spin.value(),
             process_count=self.process_count_spin.value(),
             random_seed=None if seed == -1 else seed,
-            show_live_view=self.live_view_check.isChecked(),
+            show_live_view=(
+                self.live_view_check.isChecked() and cooldown_profile is None
+            ),
             live_temperature_k=(
                 self.live_temperature_spin.value()
-                if self.live_view_check.isChecked()
+                if self.live_view_check.isChecked() and cooldown_profile is None
                 else None
+            ),
+            cooldown_profile=cooldown_profile,
+            show_cooldown_diagnostics=(
+                self.cooldown_diagnostics_check.isChecked()
+                if cooldown_profile is not None
+                else False
             ),
         )
 
@@ -783,15 +1339,40 @@ class KMCMainWindow(QtWidgets.QMainWindow):
             QtWidgets.QMessageBox.warning(self, "Invalid parameters", str(exc))
             return
 
-        estimated_events = sum(
-            2
-            * config.attempt_frequency_hz
-            * np.exp(-barrier / (BOLTZMANN_MEV_PER_K * temperature))
-            * dwell_time
-            * config.cycles
-            for temperature in config.temperatures_k
-            for _, barrier, dwell_time in config.conditions
-        )
+        if config.cooldown_profile is None:
+            with np.errstate(over="ignore"):
+                estimated_events = sum(
+                    2
+                    * config.attempt_frequency_hz
+                    * np.exp(-barrier / (BOLTZMANN_MEV_PER_K * temperature))
+                    * dwell_time
+                    * config.cycles
+                    for temperature in config.temperatures_k
+                    for _, barrier, dwell_time in config.conditions
+                )
+        else:
+            profile = config.cooldown_profile
+            estimated_events = 0.0
+            with np.errstate(over="ignore"):
+                for _, barrier, _ in config.conditions:
+                    rates = config.attempt_frequency_hz * np.exp(
+                        -barrier
+                        / (
+                            BOLTZMANN_MEV_PER_K
+                            * profile.fitted_temperature_k
+                        )
+                    )
+                    estimated_events += (
+                        2
+                        * config.cycles
+                        * float(
+                            np.sum(
+                                (rates[:-1] + rates[1:])
+                                * np.diff(profile.fit_time_s)
+                                / 2
+                            )
+                        )
+                    )
         if estimated_events >= 1e7:
             response = QtWidgets.QMessageBox.question(
                 self,
@@ -805,8 +1386,14 @@ class KMCMainWindow(QtWidgets.QMainWindow):
             if response != QtWidgets.QMessageBox.Yes:
                 return
 
+        self.last_config = config
         self.controls_group.setEnabled(False)
-        self.status_label.setText("Simulation running…")
+        self.status_label.setText(
+            f"Simulation running… {estimated_events:.2g} events expected."
+        )
+        self._simulation_started_at = time.monotonic()
+        self.elapsed_time_label.setText("Elapsed: 0 min")
+        self._elapsed_timer.start()
         self.hop_count_label.setText("Hop events: 0")
         self.hop_progress_bar.setRange(0, 0)
         if config.show_live_view:
@@ -831,12 +1418,18 @@ class KMCMainWindow(QtWidgets.QMainWindow):
     def _on_simulation_finished(
         self, results: list[dict[str, float | int | bool | str]]
     ) -> None:
+        self._stop_elapsed_timer()
         self.results = results
         self._draw_results()
         self.save_button.setEnabled(True)
-        self.status_label.setText(
-            f"Completed {self.cycles_spin.value()} cycles per temperature."
-        )
+        if self.last_config is not None and self.last_config.cooldown_profile is not None:
+            self.status_label.setText(
+                f"Cooldown complete: {self.cycles_spin.value()} trajectories per point."
+            )
+        else:
+            self.status_label.setText(
+                f"Completed {self.cycles_spin.value()} cycles per temperature."
+            )
         self.hop_progress_bar.setRange(0, 1)
         self.hop_progress_bar.setValue(1)
 
@@ -846,6 +1439,7 @@ class KMCMainWindow(QtWidgets.QMainWindow):
 
     @QtCore.pyqtSlot(str)
     def _on_simulation_failed(self, message: str) -> None:
+        self._stop_elapsed_timer()
         self.status_label.setText("Simulation failed.")
         self.hop_progress_bar.setRange(0, 1)
         self.hop_progress_bar.setValue(0)
@@ -853,13 +1447,27 @@ class KMCMainWindow(QtWidgets.QMainWindow):
 
     @QtCore.pyqtSlot()
     def _on_thread_finished(self) -> None:
+        self._elapsed_timer.stop()
         self.controls_group.setEnabled(True)
         self._worker = None
         self._thread = None
 
+    @QtCore.pyqtSlot()
+    def _update_elapsed_time(self) -> None:
+        if self._simulation_started_at is None:
+            return
+        elapsed_minutes = int((time.monotonic() - self._simulation_started_at) // 60)
+        self.elapsed_time_label.setText(f"Elapsed: {elapsed_minutes} min")
+
+    def _stop_elapsed_timer(self) -> None:
+        self._elapsed_timer.stop()
+        self._update_elapsed_time()
+        self._simulation_started_at = None
+
     def _draw_results(self) -> None:
         self.figure.clear()
         if not self.results:
+            self.cooldown_diagnostics_window.hide()
             axes = self.figure.add_subplot(111)
             axes.text(
                 0.5, 0.5, "Select plot options and run the simulation",
@@ -876,6 +1484,19 @@ class KMCMainWindow(QtWidgets.QMainWindow):
             (self.barrier_sweep_check.isChecked(), "barrier", "Multiple energy barriers"),
         ]
         modes = [(mode, title) for selected, mode, title in selected_modes if selected]
+        cooldown_profile = (
+            self.last_config.cooldown_profile
+            if self.last_config is not None
+            else None
+        )
+        if (
+            cooldown_profile is not None
+            and self.last_config is not None
+            and self.last_config.show_cooldown_diagnostics
+        ):
+            self.cooldown_diagnostics_window.show_profile(cooldown_profile)
+        else:
+            self.cooldown_diagnostics_window.hide()
         self.axes = [
             self.figure.add_subplot(1, len(modes), index + 1)
             for index in range(len(modes))
@@ -900,10 +1521,9 @@ class KMCMainWindow(QtWidgets.QMainWindow):
                         else row["barrier_mev"] == value
                     )
                 ]
-                rows.sort(key=lambda row: row["temperature_k"])
-                temperatures = np.asarray(
-                    [row["temperature_k"] for row in rows], dtype=float
-                )
+                x_key = "time_s" if cooldown_profile is not None else "temperature_k"
+                rows.sort(key=lambda row: row[x_key])
+                x_values = np.asarray([row[x_key] for row in rows], dtype=float)
                 probabilities = np.asarray(
                     [row["probability"] for row in rows], dtype=float
                 )
@@ -916,7 +1536,7 @@ class KMCMainWindow(QtWidgets.QMainWindow):
                 elif mode == "barrier":
                     label = f"{value:g} meV"
                 axes.errorbar(
-                    temperatures,
+                    x_values,
                     probabilities,
                     yerr=errors,
                     marker="o",
@@ -924,7 +1544,11 @@ class KMCMainWindow(QtWidgets.QMainWindow):
                     label=label,
                 )
 
-            axes.set_xlabel("Temperature (K)")
+            axes.set_xlabel(
+                "Elapsed cooldown time (s)"
+                if cooldown_profile is not None
+                else "Temperature (K)"
+            )
             axes.set_ylim(-0.02, 1.02)
             axes.set_title(title)
             axes.grid(True, alpha=0.25)
@@ -942,7 +1566,7 @@ class KMCMainWindow(QtWidgets.QMainWindow):
         path, _ = QtWidgets.QFileDialog.getSaveFileName(
             self,
             "Save simulation results",
-            r"E:\Nanoscience data\DBTF\November_2\Summary_CSV\D27_summary.csv",
+            r"E:\Nanoscience data\DBTF\November_2\Summary_CSV\Simulation_summary.csv",
             "CSV files (*.csv)",
         )
         if not path:

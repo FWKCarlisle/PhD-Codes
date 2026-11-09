@@ -3,9 +3,15 @@
 from __future__ import annotations
 
 import csv
+import multiprocessing
+import os
+import queue
 import sys
 import time
+from concurrent.futures import FIRST_COMPLETED, ProcessPoolExecutor, wait
 from dataclasses import dataclass
+from datetime import datetime
+from multiprocessing.queues import Queue as MultiprocessingQueue
 from typing import Callable
 
 import numpy as np
@@ -15,6 +21,13 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 
 
 BOLTZMANN_MEV_PER_K = 8.617333262e-2
+MIN_EVENTS_FOR_MULTIPROCESSING = 100_000
+_PROCESS_PROGRESS_QUEUE: MultiprocessingQueue | None = None
+
+
+def _initialize_process_worker(progress_queue: MultiprocessingQueue) -> None:
+    global _PROCESS_PROGRESS_QUEUE
+    _PROCESS_PROGRESS_QUEUE = progress_queue
 
 
 @dataclass(frozen=True)
@@ -28,6 +41,7 @@ class SimulationConfig:
     random_seed: int | None = None
     show_live_view: bool = False
     live_temperature_k: float | None = None
+    process_count: int = 1
 
 
 class OneDimensionalKMC:
@@ -51,6 +65,8 @@ class OneDimensionalKMC:
             raise ValueError("Attempt frequency must be greater than zero.")
         if config.cycles < 1:
             raise ValueError("Number of cycles must be at least one.")
+        if config.process_count < 1:
+            raise ValueError("Number of KMC processes must be at least one.")
         if config.temperatures_k.size == 0 or np.any(config.temperatures_k <= 0):
             raise ValueError("Temperatures must be greater than zero kelvin.")
         if any(not np.isfinite(time_away) or time_away < 0 for _, _, time_away in config.conditions):
@@ -65,72 +81,205 @@ class OneDimensionalKMC:
     def run(
         self,
         live_update: Callable[[dict[str, float | int | bool | str]], None] | None = None,
+        hop_update: Callable[[int], None] | None = None,
     ) -> list[dict[str, float | int | bool | str]]:
         """Return probe-overlap probabilities from event-by-event KMC trajectories."""
         rng = np.random.default_rng(self.config.random_seed)
         results: list[dict[str, float | int | bool | str]] = []
         live_preview_pending = live_update is not None
+        total_hops = 0
+        last_reported_hops = 0
+        next_batch_id = 0
 
-        for temperature in self.config.temperatures_k:
-            for mode, barrier_mev, dwell_time_s in self.config.conditions:
-                with np.errstate(over="ignore"):
-                    rate_per_direction = self.config.attempt_frequency_hz * np.exp(
-                        -barrier_mev / (BOLTZMANN_MEV_PER_K * temperature)
-                    )
-                if (
-                    not np.isfinite(rate_per_direction)
-                    or rate_per_direction > np.finfo(float).max / 2
-                ):
-                    raise ValueError(
-                        "The calculated hopping rate is too large. "
-                        "Reduce the attempt frequency or energy barrier."
-                    )
-                if live_preview_pending:
-                    self._stream_live_preview(
-                        rng,
-                        (
-                            self.config.live_temperature_k
-                            if self.config.live_temperature_k is not None
-                            else temperature
-                        ),
-                        mode,
-                        barrier_mev,
-                        dwell_time_s,
-                        live_update,
-                    )
-                    live_preview_pending = False
+        def record_hops(count: int = 1) -> None:
+            nonlocal total_hops, last_reported_hops
+            total_hops += count
+            while hop_update is not None and total_hops - last_reported_hops >= 1000:
+                last_reported_hops += 1000
+                hop_update(last_reported_hops)
 
-                recovered = 0
-                for _ in range(self.config.cycles):
-                    displacement_sites = self._simulate_trajectory(
-                        rng, rate_per_direction, dwell_time_s
-                    )
-                    displacement_nm = (
-                        abs(displacement_sites) * self.config.lattice_spacing_nm
-                    )
-                    if displacement_nm <= self.config.molecule_length_nm / 2:
-                        recovered += 1
+        process_pool: ProcessPoolExecutor | None = None
+        progress_queue: MultiprocessingQueue | None = None
+        with np.errstate(over="ignore"):
+            estimated_hops = sum(
+                2
+                * self.config.attempt_frequency_hz
+                * np.exp(-barrier / (BOLTZMANN_MEV_PER_K * temperature))
+                * dwell_time
+                * self.config.cycles
+                for temperature in self.config.temperatures_k
+                for _, barrier, dwell_time in self.config.conditions
+            )
+        use_processes = (
+            self.config.process_count > 1
+            and estimated_hops >= MIN_EVENTS_FOR_MULTIPROCESSING
+        )
+        if use_processes:
+            context = multiprocessing.get_context("spawn")
+            progress_queue = context.Queue()
+            process_pool = ProcessPoolExecutor(
+                max_workers=self.config.process_count,
+                mp_context=context,
+                initializer=_initialize_process_worker,
+                initargs=(progress_queue,),
+            )
 
-                probability = recovered / self.config.cycles
-                standard_error = np.sqrt(
-                    probability * (1.0 - probability) / self.config.cycles
-                )
-                results.append(
-                    {
-                        "mode": mode,
-                        "temperature_k": float(temperature),
-                        "dwell_time_s": dwell_time_s,
-                        "barrier_mev": barrier_mev,
-                        "recovered": recovered,
-                        "cycles": self.config.cycles,
-                        "probability": probability,
-                        "standard_error": float(standard_error),
-                        "molecule_length_nm": self.config.molecule_length_nm,
-                        "lattice_spacing_nm": self.config.lattice_spacing_nm,
-                        "attempt_frequency_hz": self.config.attempt_frequency_hz,
-                    }
-                )
+        try:
+            for temperature in self.config.temperatures_k:
+                for mode, barrier_mev, dwell_time_s in self.config.conditions:
+                    with np.errstate(over="ignore"):
+                        rate_per_direction = self.config.attempt_frequency_hz * np.exp(
+                            -barrier_mev / (BOLTZMANN_MEV_PER_K * temperature)
+                        )
+                    if (
+                        not np.isfinite(rate_per_direction)
+                        or rate_per_direction > np.finfo(float).max / 2
+                    ):
+                        raise ValueError(
+                            "The calculated hopping rate is too large. "
+                            "Reduce the attempt frequency or energy barrier."
+                        )
+                    if live_preview_pending:
+                        self._stream_live_preview(
+                            rng,
+                            (
+                                self.config.live_temperature_k
+                                if self.config.live_temperature_k is not None
+                                else temperature
+                            ),
+                            mode,
+                            barrier_mev,
+                            dwell_time_s,
+                            live_update,
+                            record_hops,
+                        )
+                        live_preview_pending = False
+
+                    if process_pool is None or progress_queue is None:
+                        recovered = 0
+                        for _ in range(self.config.cycles):
+                            displacement_sites = self._simulate_trajectory(
+                                rng,
+                                rate_per_direction,
+                                dwell_time_s,
+                                on_hop=(
+                                    record_hops if hop_update is not None else None
+                                ),
+                            )
+                            displacement_nm = (
+                                abs(displacement_sites)
+                                * self.config.lattice_spacing_nm
+                            )
+                            if displacement_nm <= self.config.molecule_length_nm / 2:
+                                recovered += 1
+                    else:
+                        recovered, next_batch_id = self._run_parallel_condition(
+                            process_pool,
+                            progress_queue,
+                            rng,
+                            rate_per_direction,
+                            dwell_time_s,
+                            next_batch_id,
+                            record_hops,
+                        )
+
+                    probability = recovered / self.config.cycles
+                    standard_error = np.sqrt(
+                        probability * (1.0 - probability) / self.config.cycles
+                    )
+                    results.append(
+                        {
+                            "mode": mode,
+                            "temperature_k": float(temperature),
+                            "dwell_time_s": dwell_time_s,
+                            "barrier_mev": barrier_mev,
+                            "recovered": recovered,
+                            "cycles": self.config.cycles,
+                            "probability": probability,
+                            "standard_error": float(standard_error),
+                            "molecule_length_nm": self.config.molecule_length_nm,
+                            "lattice_spacing_nm": self.config.lattice_spacing_nm,
+                            "attempt_frequency_hz": self.config.attempt_frequency_hz,
+                        }
+                    )
+        finally:
+            if process_pool is not None:
+                process_pool.shutdown()
+            if progress_queue is not None:
+                progress_queue.close()
+                progress_queue.join_thread()
+
+        if hop_update is not None and total_hops != last_reported_hops:
+            hop_update(total_hops)
         return results
+
+    def _run_parallel_condition(
+        self,
+        process_pool: ProcessPoolExecutor,
+        progress_queue: MultiprocessingQueue,
+        rng: np.random.Generator,
+        rate_per_direction: float,
+        dwell_time_s: float,
+        first_batch_id: int,
+        hop_update: Callable[[int], None],
+    ) -> tuple[int, int]:
+        batch_count = self.config.process_count * 4
+        batch_size = max(1, (self.config.cycles + batch_count - 1) // batch_count)
+        futures = {}
+        batch_id = first_batch_id
+        for start in range(0, self.config.cycles, batch_size):
+            batch_cycles = min(batch_size, self.config.cycles - start)
+            seed = int(rng.integers(0, np.iinfo(np.int64).max))
+            future = process_pool.submit(
+                _simulate_trajectory_batch,
+                (
+                    batch_id,
+                    seed,
+                    batch_cycles,
+                    rate_per_direction,
+                    dwell_time_s,
+                    self.config.molecule_length_nm,
+                    self.config.lattice_spacing_nm,
+                ),
+            )
+            futures[future] = batch_id
+            batch_id += 1
+
+        pending = set(futures)
+        completed: set[int] = set()
+        reported_by_batch: dict[int, int] = {}
+        recovered = 0
+
+        def drain_progress_queue() -> None:
+            while True:
+                try:
+                    queued_batch_id, hop_increment = progress_queue.get_nowait()
+                except queue.Empty:
+                    return
+                if queued_batch_id not in completed:
+                    reported_by_batch[queued_batch_id] = (
+                        reported_by_batch.get(queued_batch_id, 0) + hop_increment
+                    )
+                    hop_update(hop_increment)
+
+        while pending:
+            drain_progress_queue()
+            finished, pending = wait(
+                pending, timeout=0.1, return_when=FIRST_COMPLETED
+            )
+            for future in finished:
+                completed_batch_id, batch_recovered, batch_hops = future.result()
+                drain_progress_queue()
+                unreported_hops = (
+                    batch_hops - reported_by_batch.get(completed_batch_id, 0)
+                )
+                if unreported_hops > 0:
+                    hop_update(unreported_hops)
+                completed.add(completed_batch_id)
+                recovered += batch_recovered
+
+        drain_progress_queue()
+        return recovered, batch_id
 
     @staticmethod
     def _simulate_trajectory(
@@ -138,6 +287,7 @@ class OneDimensionalKMC:
         rate_per_direction: float,
         dwell_time_s: float,
         on_frame: Callable[[float, int, bool], None] | None = None,
+        on_hop: Callable[[int], None] | None = None,
     ) -> int:
         """Simulate each exponential waiting time and individual left/right hop."""
         total_rate = 2.0 * rate_per_direction
@@ -157,6 +307,7 @@ class OneDimensionalKMC:
 
         current_time = 0.0
         next_frame = 1
+        hops_since_update = 0
 
         while total_rate > 0.0:
             waiting_time = rng.exponential(1.0 / total_rate)
@@ -177,6 +328,11 @@ class OneDimensionalKMC:
 
             current_time = event_time
             position_sites += 1 if rng.integers(2) else -1
+            if on_hop is not None:
+                hops_since_update += 1
+                if hops_since_update == 1000:
+                    on_hop(hops_since_update)
+                    hops_since_update = 0
 
             while (
                 on_frame is not None
@@ -199,6 +355,8 @@ class OneDimensionalKMC:
                 )
                 next_frame += 1
 
+        if on_hop is not None and hops_since_update:
+            on_hop(hops_since_update)
         return position_sites
 
     def _stream_live_preview(
@@ -209,6 +367,7 @@ class OneDimensionalKMC:
         barrier_mev: float,
         dwell_time_s: float,
         live_update: Callable[[dict[str, float | int | bool | str]], None] | None,
+        hop_update: Callable[[int], None] | None = None,
     ) -> None:
         if live_update is None:
             return
@@ -237,14 +396,52 @@ class OneDimensionalKMC:
             )
 
         self._simulate_trajectory(
-            rng, rate_per_direction, dwell_time_s, on_frame=publish_frame
+            rng,
+            rate_per_direction,
+            dwell_time_s,
+            on_frame=publish_frame,
+            on_hop=hop_update,
         )
+
+
+def _simulate_trajectory_batch(
+    task: tuple[int, int, int, float, float, float, float],
+) -> tuple[int, int, int]:
+    (
+        batch_id,
+        seed,
+        cycles,
+        rate_per_direction,
+        dwell_time_s,
+        molecule_length,
+        spacing,
+    ) = task
+    rng = np.random.default_rng(seed)
+    recovered = 0
+    total_hops = 0
+
+    def report_hops(count: int) -> None:
+        nonlocal total_hops
+        previous_hops = total_hops
+        total_hops += count
+        completed_thousands = total_hops // 1000 - previous_hops // 1000
+        if completed_thousands and _PROCESS_PROGRESS_QUEUE is not None:
+            _PROCESS_PROGRESS_QUEUE.put((batch_id, completed_thousands * 1000))
+
+    for _ in range(cycles):
+        displacement_sites = OneDimensionalKMC._simulate_trajectory(
+            rng, rate_per_direction, dwell_time_s, on_hop=report_hops
+        )
+        if abs(displacement_sites) * spacing <= molecule_length / 2:
+            recovered += 1
+    return batch_id, recovered, total_hops
 
 
 class SimulationWorker(QtCore.QObject):
     finished = QtCore.pyqtSignal(object)
     failed = QtCore.pyqtSignal(str)
     progress = QtCore.pyqtSignal(object)
+    hop_count = QtCore.pyqtSignal(int)
 
     def __init__(self, config: SimulationConfig) -> None:
         super().__init__()
@@ -253,10 +450,18 @@ class SimulationWorker(QtCore.QObject):
     @QtCore.pyqtSlot()
     def run(self) -> None:
         try:
+            start_time = datetime.now().astimezone().isoformat(timespec="milliseconds")
             callback = self._publish_progress if self.config.show_live_view else None
-            results = OneDimensionalKMC(self.config).run(live_update=callback)
+            results = OneDimensionalKMC(self.config).run(
+                live_update=callback,
+                hop_update=self.hop_count.emit,
+            )
+            end_time = datetime.now().astimezone().isoformat(timespec="milliseconds")
+            for result in results:
+                result["start_time"] = start_time
+                result["end_time"] = end_time
             self.finished.emit(results)
-        except (ValueError, OverflowError) as exc:
+        except (ValueError, OverflowError, OSError, RuntimeError) as exc:
             self.failed.emit(str(exc))
 
     def _publish_progress(
@@ -334,7 +539,7 @@ class KMCMainWindow(QtWidgets.QMainWindow):
         super().__init__()
         self.setWindowTitle("1D Molecule Diffusion — Kinetic Monte Carlo")
         self.resize(1100, 720)
-        self.results: list[dict[str, float | int]] = []
+        self.results: list[dict[str, float | int | bool | str]] = []
         self._thread: QtCore.QThread | None = None
         self._worker: SimulationWorker | None = None
         self.live_window: LiveKMCWindow | None = None
@@ -352,6 +557,15 @@ class KMCMainWindow(QtWidgets.QMainWindow):
 
         self.status_label = QtWidgets.QLabel("Ready.")
         layout.addWidget(self.status_label)
+        hop_progress_layout = QtWidgets.QHBoxLayout()
+        self.hop_count_label = QtWidgets.QLabel("Hop events: 0")
+        hop_progress_layout.addWidget(self.hop_count_label)
+        self.hop_progress_bar = QtWidgets.QProgressBar()
+        self.hop_progress_bar.setTextVisible(False)
+        self.hop_progress_bar.setRange(0, 1)
+        self.hop_progress_bar.setValue(0)
+        hop_progress_layout.addWidget(self.hop_progress_bar, stretch=1)
+        layout.addLayout(hop_progress_layout)
         self.setCentralWidget(root)
 
     def _build_controls(self) -> QtWidgets.QWidget:
@@ -365,9 +579,9 @@ class KMCMainWindow(QtWidgets.QMainWindow):
         attempt_validator = QtGui.QDoubleValidator(0.0, 1e300, 300, self)
         attempt_validator.setNotation(QtGui.QDoubleValidator.ScientificNotation)
         self.attempt_edit.setValidator(attempt_validator)
-        self.temperature_min_spin = self._float_control(1.0, 5.0, 1.0, 2)
+        self.temperature_min_spin = self._float_control(1.0, 5.0, 1.0, 2) 
         self.temperature_max_spin = self._float_control(1.0, 5.0, 5.0, 2)
-        self.temperature_count_spin = self._integer_control(2, 1000, 250)
+        self.temperature_count_spin = self._integer_control(2, 1000, 50)
         self.dwell_time_spin = self._float_control(0.0, 1e12, 1, 12)
         self.time_min_spin = self._float_control(0.0, 1e12, 0.01, 12)
         self.time_max_spin = self._float_control(0.0, 1e12, 5, 12)
@@ -375,8 +589,15 @@ class KMCMainWindow(QtWidgets.QMainWindow):
         self.barrier_min_spin = self._float_control(0.0, 1000.0, 1.0, 3)
         self.barrier_max_spin = self._float_control(0.0, 1000.0, 5.0, 3)
         self.barrier_count_spin = self._integer_control(2, 100, 5)
-        self.cycles_spin = self._integer_control(1, 100000, 1000)
+        self.cycles_spin = self._integer_control(1, 100000, 50)
         self.seed_spin = self._integer_control(-1, 2147483647, -1)
+        cpu_count = os.cpu_count() or 1
+        self.process_count_spin = self._integer_control(
+            1, cpu_count, min(8, max(1, cpu_count - 1))
+        )
+        self.process_count_spin.setToolTip(
+            "Small runs stay serial to avoid process-startup overhead."
+        )
 
         form.addRow("Molecule length (nm)", self.length_spin)
         form.addRow("Lattice spacing (nm)", self.spacing_spin)
@@ -413,6 +634,7 @@ class KMCMainWindow(QtWidgets.QMainWindow):
         form.addRow(plot_options)
 
         form.addRow("Cycles per point", self.cycles_spin)
+        form.addRow("KMC processes (1 = serial)", self.process_count_spin)
         form.addRow("Random seed (-1 = random)", self.seed_spin)
         self.live_view_check = QtWidgets.QCheckBox(
             "Open a live window showing one KMC trajectory"
@@ -544,6 +766,7 @@ class KMCMainWindow(QtWidgets.QMainWindow):
             ),
             conditions=tuple(conditions),
             cycles=self.cycles_spin.value(),
+            process_count=self.process_count_spin.value(),
             random_seed=None if seed == -1 else seed,
             show_live_view=self.live_view_check.isChecked(),
             live_temperature_k=(
@@ -584,6 +807,8 @@ class KMCMainWindow(QtWidgets.QMainWindow):
 
         self.controls_group.setEnabled(False)
         self.status_label.setText("Simulation running…")
+        self.hop_count_label.setText("Hop events: 0")
+        self.hop_progress_bar.setRange(0, 0)
         if config.show_live_view:
             self.live_window = LiveKMCWindow()
             self.live_window.show()
@@ -591,6 +816,7 @@ class KMCMainWindow(QtWidgets.QMainWindow):
         self._worker = SimulationWorker(config)
         self._worker.moveToThread(self._thread)
         self._thread.started.connect(self._worker.run)
+        self._worker.hop_count.connect(self._on_hop_count_updated)
         if self.live_window is not None:
             self._worker.progress.connect(self.live_window.update_frame)
         self._worker.finished.connect(self._on_simulation_finished)
@@ -611,10 +837,18 @@ class KMCMainWindow(QtWidgets.QMainWindow):
         self.status_label.setText(
             f"Completed {self.cycles_spin.value()} cycles per temperature."
         )
+        self.hop_progress_bar.setRange(0, 1)
+        self.hop_progress_bar.setValue(1)
+
+    @QtCore.pyqtSlot(int)
+    def _on_hop_count_updated(self, hop_count: int) -> None:
+        self.hop_count_label.setText(f"Hop events: {hop_count:,}")
 
     @QtCore.pyqtSlot(str)
     def _on_simulation_failed(self, message: str) -> None:
         self.status_label.setText("Simulation failed.")
+        self.hop_progress_bar.setRange(0, 1)
+        self.hop_progress_bar.setValue(0)
         QtWidgets.QMessageBox.warning(self, "Simulation error", message)
 
     @QtCore.pyqtSlot()
@@ -706,28 +940,51 @@ class KMCMainWindow(QtWidgets.QMainWindow):
         if not self.results:
             return
         path, _ = QtWidgets.QFileDialog.getSaveFileName(
-            self, "Save simulation results", "kmc_1d_results.csv", "CSV files (*.csv)"
+            self,
+            "Save simulation results",
+            r"E:\Nanoscience data\DBTF\November_2\Summary_CSV\D27_summary.csv",
+            "CSV files (*.csv)",
         )
         if not path:
             return
         fields = [
-            "mode",
-            "temperature_k",
-            "dwell_time_s",
-            "barrier_mev",
-            "recovered",
-            "cycles",
+            "run",
+            "first_file",
+            "last_file",
+            "start_time",
+            "end_time",
+            "first_temperature",
+            "last_temperature",
+            "average_temperature",
+            "temperature_std",
+            "counts",
+            "trials",
             "probability",
-            "standard_error",
-            "molecule_length_nm",
-            "lattice_spacing_nm",
-            "attempt_frequency_hz",
+            "tau",
+        ]
+        summary_rows = [
+            {
+                "run": run,
+                "first_file": "None",
+                "last_file": "None",
+                "start_time": result["start_time"],
+                "end_time": result["end_time"],
+                "first_temperature": result["temperature_k"],
+                "last_temperature": result["temperature_k"],
+                "average_temperature": result["temperature_k"],
+                "temperature_std": 0.0,
+                "counts": result["recovered"],
+                "trials": result["cycles"],
+                "probability": result["probability"],
+                "tau": result["dwell_time_s"],
+            }
+            for run, result in enumerate(self.results, start=1)
         ]
         try:
             with open(path, "w", newline="", encoding="utf-8") as csv_file:
                 writer = csv.DictWriter(csv_file, fieldnames=fields)
                 writer.writeheader()
-                writer.writerows(self.results)
+                writer.writerows(summary_rows)
         except OSError as exc:
             QtWidgets.QMessageBox.critical(
                 self, "Could not save CSV", f"Could not write the file:\n{exc}"
@@ -737,6 +994,7 @@ class KMCMainWindow(QtWidgets.QMainWindow):
 
 
 def main() -> None:
+    multiprocessing.freeze_support()
     app = QtWidgets.QApplication(sys.argv)
     window = KMCMainWindow()
     window.show()

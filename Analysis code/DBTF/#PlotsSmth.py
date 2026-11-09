@@ -413,9 +413,9 @@ def plot_barriers():
     plt.ylabel('New barrier calculation (meV)')
     plt.legend()
     plt.show()
-def sim_plot():
+def sim_plot(Del_E, ax=None, arrehnius=True):
 
-    Ea_meV = 5.0          # Activation barrier (meV)
+    Ea_meV = Del_E         # Activation barrier (meV)
     T_min = 1.5           # Minimum temperature (K)
     T_max = 300         # Maximum temperature (K)
     num_points = 2000     # Number of temperature points
@@ -444,7 +444,7 @@ def sim_plot():
     rate_eyring = (kB * T / h) * np.exp(-Ea / (kB * T))
 
     # Natural logarithm of hopping rate
-    ln_rate_eyring = np.log(rate_eyring)
+    ln_rate_eyring = np.log(rate_eyring/T)
 
     # ==========================================
     # 4. ARRHENIUS EQUATION
@@ -461,18 +461,18 @@ def sim_plot():
     # 5. PLOT RESULTS
     # ==========================================
 
-
-    fig, ax = plt.subplots(figsize=(10, 6))
+    if ax is None:
+        fig, ax = plt.subplots(figsize=(10, 6))
 
     # Main Eyring plot
     ax.plot(inv_T, ln_rate_eyring,
-            label="Eyring equation", linewidth=2)
-
-    ax.plot(inv_T, ln_rate_arrhenius,
-            '--', label="Arrhenius equation", linewidth=2)
+            label=f"Eyring equation (Ea = {Ea_meV} meV)", linewidth=2)
+    if arrehnius:
+        ax.plot(inv_T, ln_rate_arrhenius,
+                '--', label=f"Arrhenius equation (Ea = {Ea_meV} meV)", linewidth=2)
 
     ax.set_xlabel("1/T (K$^{-1}$)", fontsize=13)
-    ax.set_ylabel("ln(Hopping rate / s$^{-1}$)", fontsize=13)
+    ax.set_ylabel("ln(Hopping rate/Temp / s$^{-1}$K$^{-1}$)", fontsize=13)
 
     ax.set_title(
         f"Eyring plot: Activation barrier = {Ea_meV} meV",
@@ -510,7 +510,7 @@ def sim_plot():
     ax_top.tick_params(axis='x', labelsize=10)
 
     plt.tight_layout()
-    plt.show()
+    # plt.show()
 
     # ==========================================
     # 6. PRINT SOME RESULTS
@@ -711,7 +711,11 @@ if __name__ == "__main__":
     # plot_force()
     # plot_diffusion()
     # plot_barriers()
-    sim_plot()
+    fig, ax = plt.subplots(figsize=(10, 6))
+    barriers = [1,2,3,4,5,6,7,8]
+    for barrier in barriers:
+        sim_plot(barrier, ax=ax, arrehnius=False)
+    plt.show()
 
 
 

@@ -855,7 +855,7 @@ class SimulationWorker(QtCore.QObject):
     finished = QtCore.pyqtSignal(object)
     failed = QtCore.pyqtSignal(str)
     progress = QtCore.pyqtSignal(object)
-    hop_count = QtCore.pyqtSignal(int)
+    hop_count = QtCore.pyqtSignal(object)
 
     def __init__(self, config: SimulationConfig) -> None:
         super().__init__()
@@ -1433,7 +1433,7 @@ class KMCMainWindow(QtWidgets.QMainWindow):
         self.hop_progress_bar.setRange(0, 1)
         self.hop_progress_bar.setValue(1)
 
-    @QtCore.pyqtSlot(int)
+    @QtCore.pyqtSlot(object)
     def _on_hop_count_updated(self, hop_count: int) -> None:
         self.hop_count_label.setText(f"Hop events: {hop_count:,}")
 

@@ -22,6 +22,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 
 BOLTZMANN_MEV_PER_K = 8.617333262e-2
 MIN_EVENTS_FOR_MULTIPROCESSING = 100_000
+COOLDOWN_FIT_SAMPLES = 201
 _PROCESS_PROGRESS_QUEUE: MultiprocessingQueue | None = None
 
 
@@ -102,7 +103,7 @@ def load_cooldown_profile(path: str) -> CooldownProfile:
     polynomial = np.polynomial.Polynomial.fit(
         normalized_time, measured_temperature_k, deg=3
     )
-    fit_time_s = np.linspace(0.0, duration_s, 201)
+    fit_time_s = np.linspace(0.0, duration_s, COOLDOWN_FIT_SAMPLES)
     fitted_temperature_k = np.asarray(
         polynomial(fit_time_s / duration_s), dtype=float
     )
@@ -125,6 +126,108 @@ def load_cooldown_profile(path: str) -> CooldownProfile:
     )
 
 
+def _cooldown_sample_count(point_count: int, percentage: int) -> int:
+    """Return an evenly spaced sample count, always retaining both endpoints."""
+    if not 0 <= percentage <= 100:
+        raise ValueError("Cooldown profile percentage must be between 0 and 100.")
+    return min(
+        point_count,
+        max(2, round((point_count - 1) * percentage / 100) + 1),
+    )
+
+
+def _cooldown_candidate_times(
+    profile: CooldownProfile, dwell_time_s: float
+) -> np.ndarray:
+    """Return the original dwell-based cooldown trajectory end times."""
+    duration_s = float(profile.time_s[-1])
+    if dwell_time_s == 0:
+        return np.asarray([0.0])
+
+    cycle_end_times = np.arange(
+        dwell_time_s, duration_s, dwell_time_s, dtype=float
+    )
+    if cycle_end_times.size == 0 or cycle_end_times[-1] < duration_s:
+        cycle_end_times = np.append(cycle_end_times, duration_s)
+    return cycle_end_times
+
+
+def _sample_cooldown_times(
+    profile: CooldownProfile, dwell_time_s: float, percentage: int
+) -> np.ndarray:
+    """Subsample dwell-based endpoints while retaining the full interpolation profile."""
+    candidate_times = _cooldown_candidate_times(profile, dwell_time_s)
+    sample_count = _cooldown_sample_count(candidate_times.size, percentage)
+    indices = np.linspace(0, candidate_times.size - 1, sample_count, dtype=int)
+    return candidate_times[indices]
+
+
+def _cooldown_segment_temperatures(
+    config: SimulationConfig,
+    profile: CooldownProfile,
+    dwell_time_s: float,
+    cycle_end_s: float,
+) -> tuple[np.ndarray, np.ndarray]:
+    """Build the same midpoint integration segments used by cooldown trajectories."""
+    duration_s = float(profile.time_s[-1])
+    cycle_start_s = max(0.0, cycle_end_s - dwell_time_s)
+    interval_s = cycle_end_s - cycle_start_s
+    if interval_s <= 0:
+        return np.asarray([], dtype=float), np.asarray([], dtype=float)
+
+    integration_points = max(
+        2,
+        int(
+            np.ceil(
+                config.temperatures_k.size * interval_s / duration_s
+            )
+        )
+        + 1,
+    )
+    sample_times = np.linspace(
+        cycle_start_s, cycle_end_s, integration_points + 1
+    )
+    midpoint_times = (sample_times[:-1] + sample_times[1:]) / 2
+    midpoint_temperatures = np.interp(
+        midpoint_times,
+        profile.fit_time_s,
+        profile.fitted_temperature_k,
+    )
+    return np.diff(sample_times), midpoint_temperatures
+
+
+def _estimate_cooldown_hops(config: SimulationConfig) -> float:
+    """Estimate hops across the selected cooldown windows using run integration."""
+    profile = config.cooldown_profile
+    if profile is None:
+        return 0.0
+
+    expected_hops = 0.0
+    with np.errstate(over="ignore"):
+        for _, barrier_mev, dwell_time_s in config.conditions:
+            selected_end_times = _sample_cooldown_times(
+                profile, dwell_time_s, config.cooldown_sample_percentage
+            )
+            for cycle_end_s in selected_end_times:
+                segment_durations, midpoint_temperatures = (
+                    _cooldown_segment_temperatures(
+                        config, profile, dwell_time_s, float(cycle_end_s)
+                    )
+                )
+                if segment_durations.size == 0:
+                    continue
+                rates = config.attempt_frequency_hz * np.exp(
+                    -barrier_mev
+                    / (BOLTZMANN_MEV_PER_K * midpoint_temperatures)
+                )
+                expected_hops += (
+                    2
+                    * config.cycles
+                    * float(np.sum(rates * segment_durations))
+                )
+    return expected_hops
+
+
 def _initialize_process_worker(progress_queue: MultiprocessingQueue) -> None:
     global _PROCESS_PROGRESS_QUEUE
     _PROCESS_PROGRESS_QUEUE = progress_queue
@@ -143,6 +246,7 @@ class SimulationConfig:
     live_temperature_k: float | None = None
     process_count: int = 1
     cooldown_profile: CooldownProfile | None = None
+    cooldown_sample_percentage: int = 100
     show_cooldown_diagnostics: bool = False
 
 
@@ -169,6 +273,8 @@ class OneDimensionalKMC:
             raise ValueError("Number of cycles must be at least one.")
         if config.process_count < 1:
             raise ValueError("Number of KMC processes must be at least one.")
+        if not 0 <= config.cooldown_sample_percentage <= 100:
+            raise ValueError("Cooldown profile percentage must be between 0 and 100.")
         if config.temperatures_k.size == 0 or np.any(config.temperatures_k <= 0):
             raise ValueError("Temperatures must be greater than zero kelvin.")
         if any(not np.isfinite(time_away) or time_away < 0 for _, _, time_away in config.conditions):
@@ -201,30 +307,7 @@ class OneDimensionalKMC:
                 hop_update(last_reported_hops)
 
         if self.config.cooldown_profile is not None:
-            profile = self.config.cooldown_profile
-            estimated_hops = 0.0
-            with np.errstate(over="ignore"):
-                for _, barrier_mev, dwell_time_s in self.config.conditions:
-                    if dwell_time_s == 0:
-                        continue
-                    rates = self.config.attempt_frequency_hz * np.exp(
-                        -barrier_mev
-                        / (
-                            BOLTZMANN_MEV_PER_K
-                            * profile.fitted_temperature_k
-                        )
-                    )
-                    estimated_hops += (
-                        2
-                        * self.config.cycles
-                        * float(
-                            np.sum(
-                                (rates[:-1] + rates[1:])
-                                * np.diff(profile.fit_time_s)
-                                / 2
-                            )
-                        )
-                    )
+            estimated_hops = _estimate_cooldown_hops(self.config)
             process_pool: ProcessPoolExecutor | None = None
             progress_queue: MultiprocessingQueue | None = None
             if (
@@ -379,23 +462,13 @@ class OneDimensionalKMC:
         if profile is None:
             raise ValueError("A cooldown profile is required for cooldown simulation.")
 
-        duration_s = float(profile.time_s[-1])
         results: list[dict[str, float | int | bool | str]] = []
         next_batch_id = 0
-
         for mode, barrier_mev, dwell_time_s in self.config.conditions:
-            if dwell_time_s == 0:
-                cycle_end_times = np.asarray([0.0])
-            else:
-                cycle_end_times = np.arange(
-                    dwell_time_s, duration_s, dwell_time_s, dtype=float
-                )
-                if cycle_end_times.size == 0 or cycle_end_times[-1] < duration_s:
-                    cycle_end_times = np.append(cycle_end_times, duration_s)
-
-            for cycle_end_s in cycle_end_times:
-                cycle_start_s = max(0.0, float(cycle_end_s) - dwell_time_s)
-                interval_s = float(cycle_end_s) - cycle_start_s
+            selected_end_times = _sample_cooldown_times(
+                profile, dwell_time_s, self.config.cooldown_sample_percentage
+            )
+            for cycle_end_s in selected_end_times:
                 temperature_k = float(
                     np.interp(
                         cycle_end_s,
@@ -403,37 +476,22 @@ class OneDimensionalKMC:
                         profile.fitted_temperature_k,
                     )
                 )
-                if interval_s == 0:
-                    segment_durations = np.asarray([], dtype=float)
+                segment_durations, midpoint_temperatures = (
+                    _cooldown_segment_temperatures(
+                        self.config,
+                        profile,
+                        dwell_time_s,
+                        float(cycle_end_s),
+                    )
+                )
+                if segment_durations.size == 0:
                     segment_rates = np.asarray([], dtype=float)
                 else:
-                    integration_points = max(
-                        2,
-                        int(
-                            np.ceil(
-                                self.config.temperatures_k.size
-                                * interval_s
-                                / duration_s
-                            )
-                        )
-                        + 1,
-                    )
-                    sample_times = np.linspace(
-                        cycle_start_s, cycle_end_s, integration_points + 1
-                    )
-                    midpoint_times = (sample_times[:-1] + sample_times[1:]) / 2
-                    midpoint_temperatures = np.interp(
-                        midpoint_times,
-                        profile.fit_time_s,
-                        profile.fitted_temperature_k,
-                    )
                     with np.errstate(over="ignore"):
-                        rates = self.config.attempt_frequency_hz * np.exp(
+                        segment_rates = self.config.attempt_frequency_hz * np.exp(
                             -barrier_mev
                             / (BOLTZMANN_MEV_PER_K * midpoint_temperatures)
                         )
-                    segment_durations = np.diff(sample_times)
-                    segment_rates = rates
                     expected_hops_each_direction = float(
                         np.sum(segment_rates * segment_durations)
                     )
@@ -958,7 +1016,12 @@ class CooldownDiagnosticsWindow(QtWidgets.QDialog):
         self.canvas = FigureCanvas(self.figure)
         layout.addWidget(self.canvas)
 
-    def show_profile(self, profile: CooldownProfile) -> None:
+    def show_profile(
+        self,
+        profile: CooldownProfile,
+        percentage: int,
+        conditions: tuple[tuple[str, float, float], ...],
+    ) -> None:
         self.figure.clear()
         temperature_axes, residual_axes = self.figure.subplots(
             2, 1, sharex=True, gridspec_kw={"height_ratios": [2, 1]}
@@ -974,7 +1037,26 @@ class CooldownDiagnosticsWindow(QtWidgets.QDialog):
             profile.fit_time_s,
             profile.fitted_temperature_k,
             color="tab:orange",
-            label="Smoothed cubic trend",
+            label="Full smoothed temperature trend",
+        )
+        dwell_times = dict.fromkeys(dwell_time_s for _, _, dwell_time_s in conditions)
+        selected_times = np.unique(
+            np.concatenate(
+                [
+                    _sample_cooldown_times(profile, dwell_time_s, percentage)
+                    for dwell_time_s in dwell_times
+                ]
+            )
+        )
+        temperature_axes.scatter(
+            selected_times,
+            np.interp(
+                selected_times, profile.fit_time_s, profile.fitted_temperature_k
+            ),
+            color="tab:red",
+            s=18,
+            zorder=3,
+            label="Selected simulation evaluation points",
         )
         temperature_axes.set_ylabel("Temperature (K)")
         temperature_axes.set_title("Measured and smoothed cooldown")
@@ -1110,10 +1192,32 @@ class KMCMainWindow(QtWidgets.QMainWindow):
             "Show temperature fit and residuals"
         )
         self.cooldown_diagnostics_check.setChecked(True)
+        self.cooldown_sample_slider = QtWidgets.QSlider(QtCore.Qt.Horizontal)
+        self.cooldown_sample_slider.setRange(0, 100)
+        self.cooldown_sample_slider.setValue(100)
+        self.cooldown_sample_slider.setToolTip(
+            "Simulate this percentage of endpoints from the original dwell-based "
+            "cooldown schedule (dwell intervals plus the cooldown end). "
+            "Temperatures between endpoints are interpolated from the full trend. "
+            "The first and last endpoints are retained when possible; 0% selects "
+            "up to two endpoints."
+        )
+        self.cooldown_sample_label = QtWidgets.QLabel()
+        self.cooldown_sample_slider.valueChanged.connect(
+            self._update_cooldown_sample_label
+        )
+        self._update_cooldown_sample_label(self.cooldown_sample_slider.value())
+        sample_layout = QtWidgets.QHBoxLayout()
+        sample_layout.addWidget(self.cooldown_sample_slider, stretch=1)
+        sample_layout.addWidget(self.cooldown_sample_label)
         cooldown_layout.addWidget(self.cooldown_profile_check, 0, 0, 1, 2)
         cooldown_layout.addWidget(self.cooldown_path_edit, 1, 0)
         cooldown_layout.addWidget(self.cooldown_browse_button, 1, 1)
         cooldown_layout.addWidget(self.cooldown_diagnostics_check, 2, 0, 1, 2)
+        cooldown_layout.addWidget(
+            QtWidgets.QLabel("Cooldown endpoint sampling"), 3, 0
+        )
+        cooldown_layout.addLayout(sample_layout, 3, 1)
         form.addRow(cooldown_group)
 
         plot_options = QtWidgets.QGroupBox("Plots to generate")
@@ -1181,6 +1285,11 @@ class KMCMainWindow(QtWidgets.QMainWindow):
         if path:
             self.cooldown_path_edit.setText(path)
 
+    def _update_cooldown_sample_label(self, percentage: int) -> None:
+        self.cooldown_sample_label.setText(
+            f"{percentage}% of endpoints"
+        )
+
     def _update_plot_controls(self) -> None:
         cooldown = self.cooldown_profile_check.isChecked()
         single = self.single_plot_check.isChecked()
@@ -1215,6 +1324,7 @@ class KMCMainWindow(QtWidgets.QMainWindow):
         self.cooldown_path_edit.setEnabled(cooldown)
         self.cooldown_browse_button.setEnabled(cooldown)
         self.cooldown_diagnostics_check.setEnabled(cooldown)
+        self.cooldown_sample_slider.setEnabled(cooldown)
 
     @staticmethod
     def _integer_control(minimum: int, maximum: int, value: int) -> QtWidgets.QSpinBox:
@@ -1254,6 +1364,7 @@ class KMCMainWindow(QtWidgets.QMainWindow):
                 "Enter a valid attempt frequency, for example 1e12."
             ) from exc
         cooldown_profile = None
+        cooldown_sample_percentage = self.cooldown_sample_slider.value()
         if self.cooldown_profile_check.isChecked():
             path = self.cooldown_path_edit.text().strip()
             if not path:
@@ -1325,6 +1436,7 @@ class KMCMainWindow(QtWidgets.QMainWindow):
                 else None
             ),
             cooldown_profile=cooldown_profile,
+            cooldown_sample_percentage=cooldown_sample_percentage,
             show_cooldown_diagnostics=(
                 self.cooldown_diagnostics_check.isChecked()
                 if cooldown_profile is not None
@@ -1351,28 +1463,7 @@ class KMCMainWindow(QtWidgets.QMainWindow):
                     for _, barrier, dwell_time in config.conditions
                 )
         else:
-            profile = config.cooldown_profile
-            estimated_events = 0.0
-            with np.errstate(over="ignore"):
-                for _, barrier, _ in config.conditions:
-                    rates = config.attempt_frequency_hz * np.exp(
-                        -barrier
-                        / (
-                            BOLTZMANN_MEV_PER_K
-                            * profile.fitted_temperature_k
-                        )
-                    )
-                    estimated_events += (
-                        2
-                        * config.cycles
-                        * float(
-                            np.sum(
-                                (rates[:-1] + rates[1:])
-                                * np.diff(profile.fit_time_s)
-                                / 2
-                            )
-                        )
-                    )
+            estimated_events = _estimate_cooldown_hops(config)
         if estimated_events >= 1e7:
             response = QtWidgets.QMessageBox.question(
                 self,
@@ -1494,7 +1585,11 @@ class KMCMainWindow(QtWidgets.QMainWindow):
             and self.last_config is not None
             and self.last_config.show_cooldown_diagnostics
         ):
-            self.cooldown_diagnostics_window.show_profile(cooldown_profile)
+            self.cooldown_diagnostics_window.show_profile(
+                cooldown_profile,
+                self.last_config.cooldown_sample_percentage,
+                self.last_config.conditions,
+            )
         else:
             self.cooldown_diagnostics_window.hide()
         self.axes = [
@@ -1521,7 +1616,7 @@ class KMCMainWindow(QtWidgets.QMainWindow):
                         else row["barrier_mev"] == value
                     )
                 ]
-                x_key = "time_s" if cooldown_profile is not None else "temperature_k"
+                x_key = "temperature_k"
                 rows.sort(key=lambda row: row[x_key])
                 x_values = np.asarray([row[x_key] for row in rows], dtype=float)
                 probabilities = np.asarray(
@@ -1544,11 +1639,7 @@ class KMCMainWindow(QtWidgets.QMainWindow):
                     label=label,
                 )
 
-            axes.set_xlabel(
-                "Elapsed cooldown time (s)"
-                if cooldown_profile is not None
-                else "Temperature (K)"
-            )
+            axes.set_xlabel("Temperature (K)")
             axes.set_ylim(-0.02, 1.02)
             axes.set_title(title)
             axes.grid(True, alpha=0.25)

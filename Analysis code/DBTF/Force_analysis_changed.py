@@ -159,7 +159,7 @@ def getdf(pname,fname,fnum,plot):
     if plot==True:
         plt.plot(x-np.mean(x),I,marker='o',markersize=3,alpha=fnum/len(files))
     
-    return x,df,kz,z,I,excitation, bias
+    return x,df,kz,z,I,excitation, bia
 
 def get_info(pname,fname):
     filename=str(fname) + str('{num:05d}'.format(num=3)) + '.dat'

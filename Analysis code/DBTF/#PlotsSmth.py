@@ -14,8 +14,7 @@ from scipy.optimize import curve_fit
 import numpy as np
 from scipy.special import erfinv
 from matplotlib.colors import SymLogNorm
-
-import datetime
+from datetime import datetime, timedelta, timezone
 
 from pathlib import Path
 import pptx
@@ -37,8 +36,8 @@ class output_data_spectra_dat():
         if show_methods == 1:
             self.show_method_fun()
     
-    def convert_time_to_epoch(self, time):
-        dt = datetime.datetime.strptime(str(time), '%d.%m.%Y %H:%M:%S')
+    def convert_time_to_epoch_class(self, time):
+        dt = datetime.strptime(str(time), '%d.%m.%Y %H:%M:%S')
         return dt.timestamp()
 
     def load_file(self, show_methods):
@@ -54,16 +53,16 @@ class output_data_spectra_dat():
         # print(meta_data)
         #Extract the time infomation:
         # self.start_time = self.convert_time_to_epoch(meta_data[meta_data.index('Start time')+11:meta_data.index('Start time')+11+19])
-        self.start_time = self.convert_time_to_epoch(meta_data[meta_data.index('Saved Date')+11:meta_data.index('Saved Date')+11+19])
+        self.start_time = self.convert_time_to_epoch_class(meta_data[meta_data.index('Saved Date')+11:meta_data.index('Saved Date')+11+19])
         
 
         meta_split = meta_data.split('\n') # Extracting the Z relative value 
         #Extract position infomation: 
-        try:
-            self.sample_time = float(meta_data.split('Sample Period (ms)\t')[1].split('\n')[0][0:-1])
-        except Exception as e:
-            print(f"Error extracting sample time: {e}")
-            self.sample_time = None  # or set a default value if appropriate
+        # try:
+        #     self.sample_time = float(meta_data.split('Sample Period (ms)\t')[1].split('\n')[0][0:-1])
+        # except Exception as e:
+        #     print(f"Error extracting sample time: {e}")
+        #     self.sample_time = None  # or set a default value if appropriate
         # self.y_pos = float(meta_data.split('Y (m)\t')[1].split('\n')[0][0:-1])
         # self.z_pos = float(meta_data.split('Z (m)\t')[1].split('\n')[0][0:-1])
         
@@ -373,7 +372,7 @@ def flatten_spectrum(x, y):
     return y - background
 
 def plot_waterfalls():
-    data_dir = Path(r"C:\Users\ppxfc1\OneDrive - The University of Nottingham\Desktop\PhD\MnTe\Line 4 -  80mT - 1648 - 1847")
+    data_dir = Path(r"E:\Nanoscience data\Pb@MnTe\23-26.10.26")
 
     files = sorted(data_dir.glob("*.dat"))
 
@@ -381,20 +380,78 @@ def plot_waterfalls():
     dIdVarr_raw = []
     biasArr = []
 
-    for file_path in files:  # limit for testing; remove [:50] to use all
-        spec = Spectrum(str(data_dir), fileName=file_path.name, channel="LI Demod 1 Y (A)")
-        dIdV = np.asarray(spec.give_data("LI Demod 1 Y (A)")[0])
-        bias = np.asarray(spec.give_data("Bias (V)")[0])
-        dIdVarr_raw.append(dIdV- np.mean(dIdV))  # store raw data for comparison
-        dIdVArr.append(flatten_spectrum(bias, dIdV))  # baseline correction using the mean and gradient of the first point
-        biasArr.append(bias)
+    temps = []
+    with open(r"E:\Nanoscience data\Pb@MnTe\Summarys\23-26.11.26.csv", "r") as f:
+        for i, line in enumerate(f):
+            if line.startswith("point,"):
+                print("Found header line:", line)
+                header = line.strip().split(",")
+                continue
+            else:
+                # print("Line does not start with 'point':", line)
+                time = convert_to_epoch(line.split(",")[1])
+                temp = float(line.split(",")[2])
+                temps.append(temp)
+    temps = np.asarray(temps)
+    temps_norm = temps - temps[0]
+
+    targets = np.arange(np.ceil(temps_norm.min() * 10) / 10,temps_norm.max() + 0.025,0.025)
+    indices = np.abs(temps_norm[:, None] - targets).argmin(axis=0)
+
+    # Get the corresponding temperatures
+    selected_temps = temps[indices]
+    print(selected_temps, indices)
+
+    # fig,((ax1, ax2), (ax3, ax4)) = plt.subplots(2,2,figsize=(8, 5))
+    for i, file_path in enumerate(files):
+        if i in indices:
+            print("Plotting file: ", i)  # limit for testing; remove [:50] to use all
+            spec = Spectrum(str(data_dir), fileName=file_path.name, channel="LI Demod 1 Y (A)")
+            dIdV = np.asarray(spec.give_data("LI Demod 1 Y (A)")[0])
+            bias = np.asarray(spec.give_data("Bias (V)")[0])
+            dIdV_mean = dIdV- np.mean(dIdV)
+            dIdVarr_raw.append(dIdV_mean)  # store raw data for comparison
+
+            dIdV_bckgrnd = flatten_spectrum(bias, dIdV_mean)  # baseline correction using the mean and gradient of the first point
+
+            plt.plot(bias * 1000, dIdV_bckgrnd * 1e12, label=f"{file_path.name} (T= {temps[i]:.2f}K)")
+        # # print(len(bias), len(dIdV_bckgrnd))
+        # if indices[0] <= i <= indices[1] :  # limit for testing; remove to use all
+        #     ax1.plot(bias * 1000, dIdV_bckgrnd * 1e12, label=f"{file_path.name} (T={selected_temps[0]:.2f} K)")
+        # elif indices[1] < i <= indices[2]:
+        #     ax2.plot(bias * 1000, dIdV_bckgrnd * 1e12, label=f"{file_path.name} (T={selected_temps[1]:.2f} K)")
+        # elif indices[2] < i <= indices[3]:
+        #     ax3.plot(bias * 1000, dIdV_bckgrnd * 1e12, label=f"{file_path.name} (T={selected_temps[2]:.2f} K)")
+        # else:
+        #     ax4.plot(bias * 1000, dIdV_bckgrnd * 1e12, label=f"{file_path.name} (T={selected_temps[3]:.2f} K)")
+        # # ax.plot(bias * 1000, dIdV_bckgrnd * 1e12, label=file_path.name)
+        # ax1.set_xlabel("Bias (V)")
+        # ax1.set_ylabel("dI/dV (A)")
+        # ax1.set_title(f"Spectra from T={selected_temps[0]:.2f}K to T={selected_temps[1]:.2f}K")
+        # ax2.set_xlabel("Bias (V)")
+        # ax2.set_ylabel("dI/dV (A)")
+        # ax2.set_title(f"Spectra from T={selected_temps[1]:.2f}K to T={selected_temps[2]:.2f}K")
+        # ax3.set_xlabel("Bias (V)")
+        # ax3.set_ylabel("dI/dV (A)")
+        # ax3.set_title(f"Spectra from T={selected_temps[2]:.2f}K to T={selected_temps[3]:.2f}K")
+        # ax4.set_title(f"Spectra from T={selected_temps[3]:.2f}K")
+        # ax4.set_xlabel("Bias (V)")
+        # ax4.set_ylabel("dI/dV (A)")
+        # ax1.set_ylabel("dI/dV (A)")
+
+
+    plt.xlabel("Bias (mV)")
+    plt.ylabel("dI/dV (pA)")
+    plt.legend()
+
+    plt.show()
 
     # for i in range(len(dIdVArr)):
     #     plt.plot(biasArr[i]*1000, dIdVArr[i]*1e12, label=f"Spectrum {i+1}")
     #     plt.plot(biasArr[i]*1000, dIdVarr_raw[i]*1e12, color='k', linestyle='--', label='Raw Data')
     #     plt.hlines(y=np.mean(dIdVArr[i]*1e12), xmin=biasArr[i].min()*1000, xmax=biasArr[i].max()*1000, color='r', linestyle='--', label=f'Mean {i+1}')
     #     plt.show()
-    plot_didv_map(biasArr, dIdVArr)
+    # plot_didv_map(biasArr, dIdVArr)
 
 def plot_barriers():
     old = [3.90,3.96,3.36,5.09,4.44,5.58,8.34,None,9.24,5.51,7.62,9.45,11.65,8.61,4.91,8.24,16.34,4.43,7.94,13.61,8.19,6.91,3.71,5.21,13.32,12.17,1.29,5.08,5.03,8.47,4.21,15.50]
@@ -522,6 +579,38 @@ def sim_plot(Del_E, ax=None, arrehnius=True):
     for temp in [1.5, 2, 3, 4, 5, 7, 10, 50, 300]:
         rate = (kB * temp / h) * np.exp(-Ea / (kB * temp))
         print(f"{temp:10.2f}     | {rate:.4e}")
+
+def convert_to_epoch(date_time):
+    
+    dt = datetime.strptime(date_time, "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc)
+
+    epoch_seconds = dt.timestamp()
+    return epoch_seconds
+
+def plot_summary():
+
+    with open(r"E:\Nanoscience data\Pb@MnTe\Summarys\23-26.11.26.csv", "r") as f:
+        for i, line in enumerate(f):
+            if line.startswith("point,"):
+                print("Found header line:", line)
+                header = line.strip().split(",")
+                continue
+            else:
+                # print("Line does not start with 'point':", line)
+                time = convert_to_epoch(line.split(",")[1])
+                temp = float(line.split(",")[2])
+        # content = f.read().splitlines()
+        # time = content.split(",")[1].split(",")[0]
+        # temp = content.split(",")[1].split(",")[1]
+
+        # time = parse_datetime(time)
+        # temp = float(temp)
+            if i in [  1, 142, 260, 354, 416, 500, 622, 754, 920, 979, 991]:
+                plt.axhline(y=temp, color='r', linestyle='--', alpha=0.5)
+            plt.plot(time, temp, marker='o', markersize=5, color='b')
+        plt.xlabel("Time (s)")
+        plt.ylabel("Temperature (K)")
+        plt.show()
 
 
 
@@ -711,11 +800,16 @@ if __name__ == "__main__":
     # plot_force()
     # plot_diffusion()
     # plot_barriers()
-    fig, ax = plt.subplots(figsize=(10, 6))
-    barriers = [1,2,3,4,5,6,7,8]
-    for barrier in barriers:
-        sim_plot(barrier, ax=ax, arrehnius=False)
-    plt.show()
 
+
+    # fig, ax = plt.subplots(figsize=(10, 6))
+    # barriers = [1,2,3,4,5,6,7,8]
+    # for barrier in barriers:
+    #     sim_plot(barrier, ax=ax, arrehnius=False)
+    # plt.show()
+   
+   
+    plot_summary()
+    # plot_waterfalls()
 
 
